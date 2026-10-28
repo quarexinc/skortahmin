@@ -1,6 +1,6 @@
 'use client';
 
-import { Apple, Bell, Cherry, Citrus, Clover, Crown, Diamond, Gem, Grape, Play, Repeat, Sparkles, Star, StopCircle, type LucideIcon } from 'lucide-react';
+import { Bell, Cherry, Citrus, Clover, Crown, Diamond, Gem, Grape, Play, Repeat, Sparkles, Star, StopCircle, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import BetInput from '@/components/games/BetInput';
@@ -22,7 +22,6 @@ const ICONS: Record<Sym, { icon: LucideIcon; color: string; label: string }> = {
   wild: { icon: Sparkles, color: '#f472b6', label: 'Joker' },
   scatter: { icon: Diamond, color: '#60a5fa', label: 'Dağınık' },
 };
-void Apple;
 
 interface Line { line: number; symbol: Sym; count: number; mult: number }
 interface Res { grid: Sym[][]; lines: Line[]; scatter: number; scatterMult: number; multiplier: number; payout: number; balance: number; fair: { serverHash: string; clientSeed: string; nonce: number } }
@@ -32,7 +31,9 @@ const randomGrid = (): Sym[][] => Array.from({ length: 5 }, () => Array.from({ l
 export default function Slots() {
   const { setBalance, toast } = useAuth();
   const [amount, setAmount] = useState('10');
-  const [grid, setGrid] = useState<Sym[][]>(randomGrid);
+  // sunucu ve istemci aynı başlangıç ızgarasını çizsin (hydration), rastgele ızgara yüklenince gelir
+  const [grid, setGrid] = useState<Sym[][]>(() => Array.from({ length: 5 }, (_, r) => Array.from({ length: 3 }, (_, i) => SYMBOLS[(r * 3 + i) % 8])));
+  useEffect(() => setGrid(randomGrid()), []);
   const [spinning, setSpinning] = useState<boolean[]>([false, false, false, false, false]);
   const [res, setRes] = useState<Res | null>(null);
   const [busy, setBusy] = useState(false);

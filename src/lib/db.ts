@@ -327,6 +327,7 @@ async function ensureSchema(): Promise<void> {
       const c = await pool().connect();
       try {
         await c.query(SCHEMA);
+        await migrateToBloxy(c);
         await seedAdmin(c);
       } finally {
         c.release();
@@ -337,6 +338,32 @@ async function ensureSchema(): Promise<void> {
     });
   }
   return globalThis.__skorSchema;
+}
+
+/**
+ * Tek seferlik geçiş: futbol dönemine ait içerikleri (SSS, duyuru, blog, sayfa, reklam) silmeden yayından kaldırır.
+ * Yönetici daha sonra panelden tekrar yayınlayabilir; işaret konduğu için bir daha çalışmaz.
+ */
+async function migrateToBloxy(c: PoolClient): Promise<void> {
+  const done = await c.query(`SELECT 1 FROM settings WHERE key = '__bloxybet_migrated'`);
+  if (done.rowCount) return;
+  const re = '(maç|futbol|tahmin|kupon|premium|skor çıkartıcı|api-football|poisson|fikstür)';
+  await c.query(`UPDATE faqs SET active = FALSE WHERE (question || ' ' || answer) ~* $1`, [re]);
+  await c.query(`UPDATE announcements SET active = FALSE WHERE (title || ' ' || COALESCE(body, '')) ~* $1`, [re]);
+  await c.query(`UPDATE posts SET published = FALSE WHERE (title || ' ' || body) ~* $1`, [re]);
+  await c.query(`UPDATE pages SET published = FALSE WHERE (title || ' ' || body) ~* $1`, [re]);
+  await c.query(`UPDATE ads SET active = FALSE WHERE (COALESCE(title, '') || ' ' || COALESCE(body, '')) ~* $1`, [re]);
+  // Eski üyelere de hoş geldin kredisi (deftere yazılarak); işlemi hiç olmayan hesaplar için
+  await c.query(
+    `WITH g AS (
+       UPDATE users SET balance = balance + 100000
+       WHERE NOT EXISTS (SELECT 1 FROM transactions t WHERE t.user_id = users.id)
+       RETURNING id, balance
+     )
+     INSERT INTO transactions (user_id, type, amount, balance_after, note)
+     SELECT id, 'signup_bonus', 100000, balance, 'BloxyBet açılış hediyesi' FROM g`,
+  );
+  await c.query(`INSERT INTO settings (key, value) VALUES ('__bloxybet_migrated', 'true') ON CONFLICT (key) DO NOTHING`);
 }
 
 async function seedAdmin(c: PoolClient): Promise<void> {

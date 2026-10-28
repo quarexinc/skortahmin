@@ -1,10 +1,10 @@
 // Cüzdan: bakiye, kasa, bonuslar, VIP ödülleri, rakeback, promosyon kodu, işlem geçmişi.
 import { VIP_LEVELS, vipFor } from '@/config/vip';
-import { ageFrom, HttpError, requireUser } from '@/lib/auth';
+import { ageFrom, HttpError, requireUser, type SessionUser } from '@/lib/auth';
 import { audit, cq, cq1, q, q1, tx } from '@/lib/db';
 import { body, route, str } from '@/lib/http';
 import { fmtCredits, toCredits, toUnits } from '@/lib/money';
-import { getSettings } from '@/lib/settings';
+import { getSettings, type SiteSettings } from '@/lib/settings';
 import { ledger, lockUser, parseAmount } from '@/lib/wallet';
 
 export const dynamic = 'force-dynamic';
@@ -49,10 +49,28 @@ export const GET = route(async () => {
   };
 });
 
+class PromoFail extends Error {
+  constructor(msg: string, public code: string) {
+    super(msg);
+  }
+}
+
 export const POST = route(async (req) => {
   const u = await requireUser();
   const b = await body(req);
   const s = await getSettings();
+  try {
+    return await handle(u, b, s);
+  } catch (e) {
+    if (e instanceof PromoFail) {
+      await audit(u.id, 'promo.fail', e.code);
+      throw new HttpError(400, e.message);
+    }
+    throw e;
+  }
+});
+
+async function handle(u: SessionUser, b: Record<string, any>, s: SiteSettings) {
   return tx(async (c) => {
     const lu = await lockUser(c, u.id);
     if ((ageFrom(lu.birth_date) ?? 0) < 18) throw new HttpError(403, 'Kredi işlemleri için önce 18 yaşından büyük olduğunu doğrulamalısın.');
@@ -119,8 +137,8 @@ export const POST = route(async (req) => {
         if (n >= 5) throw new HttpError(429, 'Çok fazla hatalı deneme. 10 dakika sonra tekrar dene.');
         const pc = await cq1(c, 'SELECT * FROM promo_codes WHERE code = $1 FOR UPDATE', [code]);
         const fail = async (msg: string): Promise<never> => {
-          await audit(u.id, 'promo.fail', code);
-          throw new HttpError(400, msg);
+          // denemeyi işlem dışında kaydetmek için (geri alma sonrası da kalsın) özel hata fırlatılır
+          throw new PromoFail(msg, code);
         };
         if (!pc || !pc.active) await fail('Kod geçersiz.');
         if (pc.expires_at && new Date(pc.expires_at).getTime() < now) await fail('Bu kodun süresi dolmuş.');
@@ -138,4 +156,5 @@ export const POST = route(async (req) => {
     }
     return { ok: true, balance, message };
   });
-});
+}
+

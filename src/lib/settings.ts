@@ -1,6 +1,6 @@
 // Site ayarları (admin panelden değiştirilir) + aktif duyurular. Kısa süreli bellek önbelleği.
 import 'server-only';
-import { dbConfigured, q } from '@/lib/db';
+import { cq, dbConfigured, q, type PoolClient } from '@/lib/db';
 
 export interface SiteSettings {
   maintenance: boolean;
@@ -71,17 +71,19 @@ export function invalidateSettings() {
   cache = null;
 }
 
-async function load() {
+/** c verilirse sorgular o bağlantı üzerinden yapılır (işlem içindeyken havuzdan ikinci bağlantı istememek için). */
+async function load(c?: PoolClient) {
   if (cache && Date.now() - cache.at < TTL) return cache;
   if (!dbConfigured()) {
     cache = { at: Date.now(), settings: DEFAULT_SETTINGS, announcements: [] };
     return cache;
   }
   try {
-    const rows = await q<{ key: string; value: unknown }>('SELECT key, value FROM settings');
+    const run = <T,>(text: string) => (c ? cq<T>(c, text) : q<T>(text));
+    const rows = await run<{ key: string; value: unknown }>('SELECT key, value FROM settings');
     const s = { ...DEFAULT_SETTINGS } as Record<string, unknown>;
     for (const r of rows) if (r.key in s && typeof r.value === typeof s[r.key]) s[r.key] = r.value;
-    const announcements = await q<Announcement>(
+    const announcements = await run<Announcement>(
       `SELECT id, title, body, level FROM announcements WHERE active ORDER BY created_at DESC LIMIT 3`,
     );
     cache = { at: Date.now(), settings: s as unknown as SiteSettings, announcements };
@@ -92,8 +94,8 @@ async function load() {
   return cache;
 }
 
-export async function getSettings(): Promise<SiteSettings> {
-  return (await load()).settings;
+export async function getSettings(c?: PoolClient): Promise<SiteSettings> {
+  return (await load(c)).settings;
 }
 
 export async function getAnnouncements(): Promise<Announcement[]> {

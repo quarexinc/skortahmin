@@ -78,7 +78,7 @@ export const GAME_NAMES: Record<GameKey, string> = { mines: 'Mines', crash: 'Cra
 
 /** Oynama koşulları: yaş, ban, mola, oyun açık mı, bahis sınırları, günlük limit. */
 export async function assertCanPlay(c: PoolClient, u: LockedUser, game: GameKey, amount: number): Promise<SiteSettings> {
-  const s = await getSettings();
+  const s = await getSettings(c);
   if (u.banned) throw new HttpError(403, 'Hesabınız askıya alınmış.');
   if ((ageFrom(u.birth_date) ?? 0) < 18) throw new HttpError(403, 'Oyunlar yalnızca 18 yaş ve üzeri üyelere açıktır. Lütfen doğum tarihinizi doğrulayın.');
   if (u.self_excluded_until && new Date(u.self_excluded_until).getTime() > Date.now())
@@ -101,7 +101,7 @@ export async function assertCanPlay(c: PoolClient, u: LockedUser, game: GameKey,
 export async function takeBet(c: PoolClient, u: LockedUser, game: GameKey, amount: number, ref?: string): Promise<number> {
   await assertCanPlay(c, u, game, amount);
   const balance = await ledger(c, u.id, 'bet', -amount, { ref: ref ?? game });
-  const s = await getSettings();
+  const s = await getSettings(c);
   const before = vipFor(toCredits(u.wagered)).current;
   const rate = s.rakebackEnabled ? before.rakeback : 0;
   const rb = Math.floor((amount * rate) / 100);
@@ -134,7 +134,7 @@ export async function settle(
   detail: unknown,
   fair?: FairRef,
 ): Promise<{ balance: number; payout: number; multiplier: number; betId: number }> {
-  const s = await getSettings();
+  const s = await getSettings(c);
   const payout = Math.max(0, Math.min(Math.floor(rawPayout), toUnits(s.maxPayout)));
   const multiplier = amount > 0 ? payout / amount : 0;
   const bet = await cq1<{ id: string }>(c, `INSERT INTO bets (user_id, game, amount, payout, multiplier, detail, server_hash, client_seed, nonce)

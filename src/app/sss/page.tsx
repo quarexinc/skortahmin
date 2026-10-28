@@ -19,7 +19,7 @@ export default async function Page() {
       <h1 className="text-3xl font-black tracking-tight">Sıkça sorulan sorular</h1>
       <p className="mt-2 text-slate-400">
         Aradığını bulamadın mı? <Link href="/destek/yeni" className="text-accent-soft underline">Destek talebi aç</Link> ya da{' '}
-        <Link href="/nasil-calisir" className="text-accent-soft underline">modelin nasıl çalıştığını</Link> oku.
+        <Link href="/adil-oyun" className="text-accent-soft underline">adil oyun</Link> sayfasına göz at.
       </p>
       {Object.entries(groups).map(([cat, list]) => (
         <section key={cat} className="mt-10">
