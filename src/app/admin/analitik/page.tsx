@@ -1,15 +1,15 @@
 'use client';
 
-import { Eye, Target, UserPlus, Users } from 'lucide-react';
+import { Eye, Gamepad2, UserPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import MiniChart from '@/components/admin/MiniChart';
 import { Card, PageHeader, Spinner } from '@/components/ui';
 import { api } from '@/lib/client';
 
 interface D {
-  series: { day: string; views: number; visitors: number; signups: number; predictions: number }[];
+  series: { day: string; views: number; visitors: number; signups: number; bets: number }[];
   topPages: { path: string; views: number }[];
-  totals: { views: number; visitors: number; signups: number; predictions: number };
+  totals: { views: number; visitors: number; signups: number; bets: number };
 }
 
 export default function Analytics() {
@@ -38,7 +38,7 @@ export default function Analytics() {
               { l: 'Sayfa görüntüleme', v: d.totals.views, i: Eye },
               { l: 'Tekil ziyaretçi (günlük toplam)', v: d.totals.visitors, i: Users },
               { l: 'Yeni üye', v: d.totals.signups, i: UserPlus },
-              { l: 'Yapılan tahmin', v: d.totals.predictions, i: Target },
+              { l: 'Oynanan el', v: d.totals.bets, i: Gamepad2 },
             ].map((t) => (
               <div key={t.l} className="card p-4">
                 <p className="flex items-center gap-1.5 text-xs text-slate-500"><t.i size={14} /> {t.l}</p>
@@ -58,13 +58,13 @@ export default function Analytics() {
           </Card>
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <p className="label-muted mb-4">Üye ve tahmin aktivitesi</p>
+              <p className="label-muted mb-4">Üye ve oyun aktivitesi</p>
               <MiniChart
                 height={180}
                 labels={d.series.map((s) => s.day)}
                 series={[
                   { name: 'Yeni üye', color: '#a78bfa', values: d.series.map((s) => s.signups) },
-                  { name: 'Tahmin', color: '#f59e0b', values: d.series.map((s) => s.predictions) },
+                  { name: 'El', color: '#f59e0b', values: d.series.map((s) => s.bets) },
                 ]}
               />
             </Card>

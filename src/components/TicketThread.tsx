@@ -18,7 +18,7 @@ interface Ticket {
   user_id: number | null;
   user_name: string | null;
   user_email: string | null;
-  user_plan: string | null;
+  user_vip: boolean | null;
   guest_name: string | null;
   guest_email: string | null;
 }
@@ -73,7 +73,7 @@ export default function TicketThread({ id, staff = false }: { id: number; staff?
             {staff && (
               <p className="mt-1 text-sm text-slate-400">
                 {who} · {t.user_email ?? t.guest_email}
-                {t.user_plan === 'premium' && ' · Premium'}
+                {t.user_vip && ' · VIP (öncelikli)'}
                 {!t.user_id && ' · üye değil (e-postayla yanıtlayın)'}
               </p>
             )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { BellRing, Download, FileText, Gem, HelpCircle, Image, LayoutDashboard, LifeBuoy, LineChart, Mail, Megaphone, MessageSquare, MessagesSquare, Newspaper, ScrollText, Server, Settings, ShieldAlert, ShieldCheck, Target, TicketPercent, Users, Zap, type LucideIcon } from 'lucide-react';
+import { BellRing, Coins, Download, FileText, Gamepad2, HelpCircle, Image, LayoutDashboard, LifeBuoy, LineChart, Mail, Megaphone, MessagesSquare, Newspaper, Rocket, ScrollText, Server, Settings, ShieldAlert, ShieldCheck, TicketPercent, Users, Zap, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -18,10 +18,17 @@ const GROUPS: { title: string; items: { href: string; label: string; icon: Lucid
     ],
   },
   {
+    title: 'Casino',
+    items: [
+      { href: '/admin/oyunlar', label: 'Oyunlar & eller', icon: Gamepad2 },
+      { href: '/admin/crash', label: 'Crash turları', icon: Rocket },
+      { href: '/admin/islemler', label: 'Kredi işlemleri', icon: Coins },
+    ],
+  },
+  {
     title: 'Üyeler',
     items: [
       { href: '/admin/kullanicilar', label: 'Kullanıcılar', icon: Users },
-      { href: '/admin/premium', label: 'Premium talepleri', icon: Gem, badge: 'premium_pending' },
       { href: '/admin/promosyon', label: 'Promosyon kodları', icon: TicketPercent },
       { href: '/admin/bulten', label: 'Bülten aboneleri', icon: Mail },
       { href: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
@@ -44,13 +51,6 @@ const GROUPS: { title: string; items: { href: string; label: string; icon: Lucid
       { href: '/admin/sss', label: 'SSS yönetimi', icon: HelpCircle },
       { href: '/admin/duyurular', label: 'Duyurular', icon: Megaphone },
       { href: '/admin/bildirim', label: 'Toplu bildirim', icon: BellRing },
-    ],
-  },
-  {
-    title: 'Topluluk',
-    items: [
-      { href: '/admin/yorumlar', label: 'Yorumlar', icon: MessageSquare, badge: 'comments_flagged' },
-      { href: '/admin/tahminler', label: 'Tahminler', icon: Target, badge: 'predictions_unscored' },
     ],
   },
   {

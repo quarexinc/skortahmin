@@ -15,7 +15,7 @@ function Toggle({ label, desc, value, onChange }: { label: string; desc: string;
         <span className="block font-medium">{label}</span>
         <span className="block text-sm text-slate-400">{desc}</span>
       </span>
-      <button type="button" role="switch" aria-checked={value} onClick={() => onChange(!value)} className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition ${value ? 'bg-accent' : 'bg-ink-600'}`}>
+      <button type="button" role="switch" aria-checked={value} onClick={() => onChange(!value)} className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition ${value ? 'bg-violet-500' : 'bg-ink-600'}`}>
         <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${value ? 'left-[22px]' : 'left-0.5'}`} />
       </button>
     </label>
@@ -32,6 +32,9 @@ export default function SettingsAdmin() {
   }, []);
   if (!s) return <Spinner />;
   const set = (k: string) => (v: string | number | boolean) => setS({ ...s, [k]: v });
+  const num = (k: string, label: string, hint?: string, step = '1') => (
+    <Field label={label} hint={hint}><Input type="number" step={step} min={0} value={String(s[k])} onChange={(e) => set(k)(e.target.value)} /></Field>
+  );
   const save = async () => {
     setBusy(true);
     const { data, error } = await api<{ settings: S }>('/api/admin/settings', { method: 'PUT', body: s });
@@ -44,28 +47,54 @@ export default function SettingsAdmin() {
   return (
     <div className="space-y-6">
       <PageHeader title="Site ayarları" actions={<Button onClick={save} loading={busy}>Kaydet</Button>} />
-      <Card className="divide-y divide-white/5 py-2">
-        <Toggle label="Bakım modu" desc="Açıkken yöneticiler dışında herkes bakım ekranını görür (giriş sayfası açık kalır)." value={!!s.maintenance} onChange={set('maintenance')} />
-        <Toggle label="Yeni üye kaydı" desc="Kapalıyken kayıt formu yeni hesap oluşturmaz." value={!!s.registrationsOpen} onChange={set('registrationsOpen')} />
-        <Toggle label="Maç yorumları" desc="Kapalıyken yeni yorum yapılamaz; mevcutlar görünmeye devam eder." value={!!s.commentsEnabled} onChange={set('commentsEnabled')} />
-        <Toggle label="Canlı destek" desc="Sağ alttaki canlı destek balonunu gösterir." value={!!s.liveChatEnabled} onChange={set('liveChatEnabled')} />
-        <Toggle label="Reklamlar" desc="Reklam bannerlarını sitede gösterir." value={!!s.adsEnabled} onChange={set('adsEnabled')} />
-        <Toggle label="Premium üyelere reklam gösterme" desc="Premium üyeler ve yöneticiler reklam görmez." value={!!s.hideAdsForPremium} onChange={set('hideAdsForPremium')} />
-        <Toggle label="Blog" desc="Blog menüsünü ve yazıları gösterir." value={!!s.blogEnabled} onChange={set('blogEnabled')} />
-        <Toggle label="Bülten aboneliği" desc="Açılış sayfası ve alt bilgide bülten formunu gösterir." value={!!s.newsletterEnabled} onChange={set('newsletterEnabled')} />
-        <Toggle label="Çerez bildirimi" desc="İlk ziyarette çerez/yerel depolama bilgilendirmesi gösterir." value={!!s.cookieBanner} onChange={set('cookieBanner')} />
-      </Card>
-      <Card className="space-y-4">
-        <Field label="Açılış sayfası başlığı" hint="İçinde “sayılarla” geçerse o kelime animasyonlu döner."><Input value={String(s.heroTitle)} onChange={(e) => set('heroTitle')(e.target.value)} /></Field>
-        <Field label="Açılış sayfası alt başlığı"><Textarea rows={2} value={String(s.heroSubtitle)} onChange={(e) => set('heroSubtitle')(e.target.value)} /></Field>
-        <Field label="Bakım mesajı"><Textarea rows={2} value={String(s.maintenanceMessage)} onChange={(e) => set('maintenanceMessage')(e.target.value)} /></Field>
-        <Field label="Destek çalışma saatleri"><Input value={String(s.supportHours)} onChange={(e) => set('supportHours')(e.target.value)} /></Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Premium fiyat metni"><Input value={String(s.premiumPriceText)} onChange={(e) => set('premiumPriceText')(e.target.value)} /></Field>
-          <Field label="Ücretsiz üye kupon limiti"><Input type="number" min={0} max={100} value={Number(s.freeCouponLimit)} onChange={(e) => set('freeCouponLimit')(Number(e.target.value))} /></Field>
-        </div>
-        <Field label="Premium ödeme bilgilendirmesi" hint="Premium sayfasında talep formunun üstünde görünür."><Textarea rows={3} value={String(s.premiumPaymentInfo)} onChange={(e) => set('premiumPaymentInfo')(e.target.value)} /></Field>
-      </Card>
+
+      <div>
+        <p className="label-muted mb-2">Oyunlar</p>
+        <Card className="divide-y divide-white/5 py-2">
+          <Toggle label="Crash" desc="Kapalıyken yeni bahis alınmaz; devam eden tur tamamlanır." value={!!s.crashEnabled} onChange={set('crashEnabled')} />
+          <Toggle label="Mines" desc="Kapalıyken yeni oyun başlatılamaz; açık oyunlar bitirilebilir." value={!!s.minesEnabled} onChange={set('minesEnabled')} />
+          <Toggle label="Slots" desc="Kapalıyken çevirme yapılamaz." value={!!s.slotsEnabled} onChange={set('slotsEnabled')} />
+          <Toggle label="Blackjack" desc="Kapalıyken yeni el dağıtılmaz; açık eller bitirilebilir." value={!!s.blackjackEnabled} onChange={set('blackjackEnabled')} />
+        </Card>
+        <Card className="mt-3 grid gap-4 sm:grid-cols-3">
+          {num('minBet', 'En düşük bahis (kredi)', undefined, '0.01')}
+          {num('maxBet', 'En yüksek bahis (kredi)')}
+          {num('maxPayout', 'Tek elde en yüksek ödeme', 'Bu tutarın üstündeki kazançlar sınırlanır.')}
+        </Card>
+      </div>
+
+      <div>
+        <p className="label-muted mb-2">Sanal kredi ekonomisi</p>
+        <Card className="divide-y divide-white/5 py-2">
+          <Toggle label="Günlük bonus" desc="Üyeler 24 saatte bir VIP seviyesine göre bonus alabilir." value={!!s.dailyBonusEnabled} onChange={set('dailyBonusEnabled')} />
+          <Toggle label="Rakeback" desc="Oynanan her bahsin bir yüzdesi rakeback hesabında birikir." value={!!s.rakebackEnabled} onChange={set('rakebackEnabled')} />
+        </Card>
+        <Card className="mt-3 grid gap-4 sm:grid-cols-3">
+          {num('signupBonus', 'Hoş geldin kredisi')}
+          {num('faucetAmount', 'Musluk miktarı', 'Bakiye 1 kredinin altındayken verilir.')}
+          {num('faucetMinutes', 'Musluk bekleme süresi (dk)')}
+        </Card>
+        <p className="mt-2 text-xs text-slate-500">Krediler sanaldır; satın alınamaz, satılamaz ve paraya veya herhangi bir değere çevrilemez.</p>
+      </div>
+
+      <div>
+        <p className="label-muted mb-2">Site</p>
+        <Card className="divide-y divide-white/5 py-2">
+          <Toggle label="Bakım modu" desc="Açıkken yöneticiler dışında herkes bakım ekranını görür (giriş sayfası açık kalır)." value={!!s.maintenance} onChange={set('maintenance')} />
+          <Toggle label="Yeni üye kaydı" desc="Kapalıyken kayıt formu yeni hesap oluşturmaz." value={!!s.registrationsOpen} onChange={set('registrationsOpen')} />
+          <Toggle label="Canlı destek" desc="Sağ alttaki canlı destek balonunu gösterir." value={!!s.liveChatEnabled} onChange={set('liveChatEnabled')} />
+          <Toggle label="Reklamlar" desc="Reklam bannerlarını sitede gösterir." value={!!s.adsEnabled} onChange={set('adsEnabled')} />
+          <Toggle label="Blog" desc="Blog menüsünü ve yazıları gösterir." value={!!s.blogEnabled} onChange={set('blogEnabled')} />
+          <Toggle label="Bülten aboneliği" desc="Açılış sayfası ve alt bilgide bülten formunu gösterir." value={!!s.newsletterEnabled} onChange={set('newsletterEnabled')} />
+          <Toggle label="Çerez bildirimi" desc="İlk ziyarette çerez/yerel depolama bilgilendirmesi gösterir." value={!!s.cookieBanner} onChange={set('cookieBanner')} />
+        </Card>
+        <Card className="mt-3 space-y-4">
+          <Field label="Açılış sayfası başlığı" hint="İçinde “sanal kredilerle” geçerse o kısım animasyonlu döner."><Input value={String(s.heroTitle)} onChange={(e) => set('heroTitle')(e.target.value)} /></Field>
+          <Field label="Açılış sayfası alt başlığı"><Textarea rows={2} value={String(s.heroSubtitle)} onChange={(e) => set('heroSubtitle')(e.target.value)} /></Field>
+          <Field label="Bakım mesajı"><Textarea rows={2} value={String(s.maintenanceMessage)} onChange={(e) => set('maintenanceMessage')(e.target.value)} /></Field>
+          <Field label="Destek çalışma saatleri"><Input value={String(s.supportHours)} onChange={(e) => set('supportHours')(e.target.value)} /></Field>
+        </Card>
+      </div>
     </div>
   );
 }

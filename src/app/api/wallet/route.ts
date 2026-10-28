@@ -129,8 +129,8 @@ export const POST = route(async (req) => {
         if (Number(pc.credits) <= 0) await fail('Bu kod kredi içermiyor.');
         await cq(c, 'UPDATE promo_codes SET used_count = used_count + 1 WHERE id = $1', [pc.id]);
         await cq(c, 'INSERT INTO promo_redemptions (code_id, user_id) VALUES ($1, $2)', [pc.id, u.id]);
-        balance = await ledger(c, u.id, 'promo', Number(pc.credits), { ref: code });
-        message = `${fmtCredits(pc.credits)} kredi promosyon kodundan eklendi.`;
+        balance = await ledger(c, u.id, 'promo', toUnits(Number(pc.credits)), { ref: code });
+        message = `${Number(pc.credits).toLocaleString('tr-TR')} kredi promosyon kodundan eklendi.`;
         break;
       }
       default:

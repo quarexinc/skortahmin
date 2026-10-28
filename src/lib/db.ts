@@ -305,6 +305,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS self_excluded_until TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_wager_limit BIGINT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS session_reminder_min INT;
 ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS credits BIGINT NOT NULL DEFAULT 0;
+-- BloxyBet geçişi: futbol dönemine ait ayarları temizle (yeni varsayılanlar geçerli olsun)
+DELETE FROM settings WHERE key IN ('commentsEnabled', 'hideAdsForPremium', 'premiumPriceText', 'freeCouponLimit', 'premiumPaymentInfo');
+DELETE FROM settings WHERE key IN ('heroTitle', 'heroSubtitle')
+  AND (value::text ILIKE '%sayılarla%' OR value::text ILIKE '%maç%' OR value::text ILIKE '%futbol%' OR value::text ILIKE '%tahmin%' OR value::text ILIKE '%skor%');
 CREATE TABLE IF NOT EXISTS transactions (
   id BIGSERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

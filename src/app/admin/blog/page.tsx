@@ -12,7 +12,7 @@ export default function BlogAdmin() {
     <CrudManager
       endpoint="/api/admin/posts"
       title="Blog yazıları"
-      subtitle="Maç önizlemeleri, analiz rehberleri ve duyurular. İçerik basit Markdown destekler: # başlık, **kalın**, *italik*, [bağlantı](https://…), - liste, > alıntı."
+      subtitle="Oyun rehberleri, etkinlik duyuruları ve güncellemeler. İçerik basit Markdown destekler: # başlık, **kalın**, *italik*, [bağlantı](https://…), - liste, > alıntı."
       icon={Newspaper}
       emptyText="Henüz yazı yok"
       createLabel="Yeni yazı"

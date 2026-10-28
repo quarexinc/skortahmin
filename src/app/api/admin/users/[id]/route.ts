@@ -2,7 +2,9 @@
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { HttpError, requireAdmin } from '@/lib/auth';
-import { audit, notify, q, q1 } from '@/lib/db';
+import { audit, notify, q, q1, tx } from '@/lib/db';
+import { fmtCredits, toUnits } from '@/lib/money';
+import { ledger, lockUser } from '@/lib/wallet';
 import { body, int, oneOf, route, str } from '@/lib/http';
 
 export const dynamic = 'force-dynamic';
@@ -13,20 +15,24 @@ export const GET = route<Ctx>(async (_req, { params }) => {
   await requireAdmin();
   const id = int(params.id, 'Kullanıcı');
   const user = await q1(
-    `SELECT id, name, email, role, plan, premium_until, banned, ban_reason, favorite_team, bio, created_at, last_login_at, avatar_color FROM users WHERE id = $1`,
+    `SELECT id, name, email, role, banned, ban_reason, favorite_team, bio, created_at, last_login_at, avatar_color,
+       balance, vault, wagered, rakeback, level_claimed, birth_date, self_excluded_until, daily_wager_limit, session_reminder_min, last_daily_at
+     FROM users WHERE id = $1`,
     [id],
   );
   if (!user) throw new HttpError(404, 'Kullanıcı bulunamadı.');
   const stats = await q1(
-    `SELECT (SELECT COUNT(*)::int FROM predictions WHERE user_id = $1) AS predictions,
-       (SELECT COALESCE(SUM(points),0)::int FROM predictions WHERE user_id = $1) AS points,
-       (SELECT COUNT(*)::int FROM comments WHERE user_id = $1) AS comments,
-       (SELECT COUNT(*)::int FROM coupons WHERE user_id = $1) AS coupons,
+    `SELECT (SELECT COUNT(*)::int FROM bets WHERE user_id = $1) AS bets,
+       (SELECT COALESCE(SUM(amount),0)::bigint FROM bets WHERE user_id = $1) AS bet_sum,
+       (SELECT COALESCE(SUM(payout),0)::bigint FROM bets WHERE user_id = $1) AS paid_sum,
+       (SELECT COALESCE(MAX(multiplier),0)::float FROM bets WHERE user_id = $1) AS best,
+       (SELECT COALESCE(SUM(amount),0)::bigint FROM transactions WHERE user_id = $1 AND type NOT IN ('bet','win','refund','vault_in','vault_out')) AS bonuses,
        (SELECT COUNT(*)::int FROM tickets WHERE user_id = $1) AS tickets`,
     [id],
   );
+  const transactions = await q(`SELECT id, type, amount, balance_after, ref, note, created_at FROM transactions WHERE user_id = $1 ORDER BY id DESC LIMIT 15`, [id]);
   const logins = await q(`SELECT ip, success, created_at FROM login_attempts WHERE email = $1 ORDER BY id DESC LIMIT 10`, [user.email]);
-  return { user, stats, logins };
+  return { user, stats, transactions, logins };
 });
 
 export const PATCH = route<Ctx>(async (req, { params }) => {
@@ -35,11 +41,11 @@ export const PATCH = route<Ctx>(async (req, { params }) => {
   const b = await body(req);
   const action = oneOf(
     b.action,
-    ['grant_premium', 'revoke_premium', 'set_role', 'ban', 'unban', 'reset_password', 'logout', 'rename'] as const,
+    ['adjust_balance', 'reset_age', 'set_role', 'ban', 'unban', 'reset_password', 'logout', 'rename'] as const,
     'İşlem',
   );
-  const target = await q1<{ id: number; role: string; email: string; premium_until: Date | null; plan: string }>(
-    'SELECT id, role, email, premium_until, plan FROM users WHERE id = $1',
+  const target = await q1<{ id: number; role: string; email: string }>(
+    'SELECT id, role, email FROM users WHERE id = $1',
     [id],
   );
   if (!target) throw new HttpError(404, 'Kullanıcı bulunamadı.');
@@ -47,21 +53,23 @@ export const PATCH = route<Ctx>(async (req, { params }) => {
 
   let extra: Record<string, unknown> = {};
   switch (action) {
-    case 'grant_premium': {
-      const months = int(b.months, 'Süre', { min: 0, max: 120 });
-      // 0 = süresiz. Aktif premium varsa süre bitiş tarihinin üzerine eklenir.
-      if (months === 0) await q(`UPDATE users SET plan = 'premium', premium_until = NULL WHERE id = $1`, [id]);
-      else
-        await q(
-          `UPDATE users SET plan = 'premium',
-             premium_until = GREATEST(COALESCE(premium_until, NOW()), NOW()) + ($2 || ' months')::interval WHERE id = $1`,
-          [id, String(months)],
-        );
-      await notify(id, 'Premium üyeliğin aktif!', months ? `${months} aylık premium tanımlandı.` : 'Süresiz premium tanımlandı.', '/hesap');
+    case 'adjust_balance': {
+      // Yalnızca sanal kredi düzeltmesi: + ekler, - düşer. Her işlem deftere ve işlem kayıtlarına yazılır.
+      const credits = Number(String(b.amount ?? '').replace(',', '.'));
+      if (!Number.isFinite(credits) || credits === 0 || Math.abs(credits) > 10_000_000) throw new HttpError(400, 'Geçerli bir tutar gir (ör. 500 veya -250).');
+      const reason = str(b.reason, 'Açıklama', { min: 3, max: 200 });
+      const units = toUnits(credits);
+      const balance = await tx(async (c) => {
+        await lockUser(c, id);
+        return ledger(c, id, units > 0 ? 'admin_credit' : 'admin_debit', units, { note: reason });
+      });
+      if (units > 0) await notify(id, 'Hesabına kredi eklendi', `${fmtCredits(units)} kredi eklendi: ${reason}`, '/cuzdan');
+      extra = { balance };
       break;
     }
-    case 'revoke_premium':
-      await q(`UPDATE users SET plan = 'free', premium_until = NULL WHERE id = $1`, [id]);
+    case 'reset_age':
+      await q('UPDATE users SET birth_date = NULL WHERE id = $1', [id]);
+      await notify(id, 'Yaş doğrulaması gerekli', 'Oynamaya devam etmek için doğum tarihini yeniden doğrulaman gerekiyor.', '/hesap');
       break;
     case 'set_role': {
       const role = oneOf(b.role, ['user', 'admin'] as const, 'Rol');

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Badge, CATEGORY_TR, Empty, Input, PageHeader, PRIORITY_TR, Spinner, STATUS_TR } from '@/components/ui';
 import { api, timeAgo } from '@/lib/client';
 
-interface T { id: number; subject: string; category: string; priority: string; status: string; updated_at: string; who: string | null; email: string | null; guest: boolean; premium: boolean; messages: number }
+interface T { id: number; subject: string; category: string; priority: string; status: string; updated_at: string; who: string | null; email: string | null; guest: boolean; vip: boolean; messages: number }
 
 export default function TicketsAdmin() {
   const [status, setStatus] = useState('active');
@@ -31,7 +31,7 @@ export default function TicketsAdmin() {
             <Link key={t.id} href={`/admin/destek/${t.id}`} className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition hover:bg-white/5">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">#{t.id} · {t.subject}</p>
-                <p className="truncate text-xs text-slate-500">{t.who} · {t.email} {t.guest && '· ziyaretçi'} {t.premium && '· Premium'} · {CATEGORY_TR[t.category] ?? t.category} · {t.messages} mesaj · {timeAgo(t.updated_at)}</p>
+                <p className="truncate text-xs text-slate-500">{t.who} · {t.email} {t.guest && '· ziyaretçi'} {t.vip && '· VIP'} · {CATEGORY_TR[t.category] ?? t.category} · {t.messages} mesaj · {timeAgo(t.updated_at)}</p>
               </div>
               <Badge color={PRIORITY_TR[t.priority]?.color}>{PRIORITY_TR[t.priority]?.label}</Badge>
               <Badge color={STATUS_TR[t.status]?.color}>{STATUS_TR[t.status]?.label}</Badge>
