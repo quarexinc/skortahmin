@@ -188,8 +188,11 @@ export const PRIORITY_TR: Record<string, { label: string; color: keyof typeof BA
 export const CATEGORY_TR: Record<string, string> = {
   genel: 'Genel',
   hesap: 'Hesap & giriş',
-  premium: 'Premium & ödeme',
-  tahmin: 'Tahmin & veri',
+  oyun: 'Oyun & krediler',
+  adil: 'Adil oyun',
+  sorumlu: 'Sorumlu oyun',
+  premium: 'Üyelik (eski)',
+  tahmin: 'Veri (eski)',
   hata: 'Hata bildirimi',
   oneri: 'Öneri',
   iletisim: 'İletişim formu',

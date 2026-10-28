@@ -23,8 +23,7 @@ export interface LockedUser {
 }
 
 export async function lockUser(c: PoolClient, id: number): Promise<LockedUser> {
-  const r = await cq1<Record<string, unknown>>(
-    `SELECT id, name, balance, vault, wagered, rakeback, banned, birth_date, self_excluded_until, daily_wager_limit
+  const r = await cq1<Record<string, unknown>>(c, `SELECT id, name, balance, vault, wagered, rakeback, banned, birth_date, self_excluded_until, daily_wager_limit
      FROM users WHERE id = $1 FOR UPDATE`,
     [id],
   );
@@ -52,8 +51,7 @@ export async function ledger(
   opts: { ref?: string; note?: string } = {},
 ): Promise<number> {
   if (!Number.isInteger(amount)) throw new Error('ledger: tamsayı olmayan tutar');
-  const row = await cq1<{ balance: string }>(
-    'UPDATE users SET balance = balance + $2 WHERE id = $1 AND balance + $2 >= 0 RETURNING balance',
+  const row = await cq1<{ balance: string }>(c, 'UPDATE users SET balance = balance + $2 WHERE id = $1 AND balance + $2 >= 0 RETURNING balance',
     [userId, amount],
   );
   if (!row) throw new HttpError(400, 'Yetersiz bakiye.');
@@ -90,8 +88,7 @@ export async function assertCanPlay(c: PoolClient, u: LockedUser, game: GameKey,
   if (amount > toUnits(s.maxBet)) throw new HttpError(400, `En yüksek bahis ${s.maxBet.toLocaleString('tr-TR')} kredi.`);
   if (amount > u.balance) throw new HttpError(400, 'Yetersiz bakiye.');
   if (u.daily_wager_limit != null) {
-    const [{ sum }] = await cq<{ sum: string }>(
-      `SELECT COALESCE(-SUM(amount), 0) AS sum FROM transactions WHERE user_id = $1 AND type = 'bet' AND created_at > NOW() - INTERVAL '24 hours'`,
+    const [{ sum }] = await cq<{ sum: string }>(c, `SELECT COALESCE(-SUM(amount), 0) AS sum FROM transactions WHERE user_id = $1 AND type = 'bet' AND created_at > NOW() - INTERVAL '24 hours'`,
       [u.id],
     );
     if (Number(sum) + amount > u.daily_wager_limit)
@@ -140,14 +137,13 @@ export async function settle(
   const s = await getSettings();
   const payout = Math.max(0, Math.min(Math.floor(rawPayout), toUnits(s.maxPayout)));
   const multiplier = amount > 0 ? payout / amount : 0;
-  const bet = await cq1<{ id: string }>(
-    `INSERT INTO bets (user_id, game, amount, payout, multiplier, detail, server_hash, client_seed, nonce)
+  const bet = await cq1<{ id: string }>(c, `INSERT INTO bets (user_id, game, amount, payout, multiplier, detail, server_hash, client_seed, nonce)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
     [userId, game, amount, payout, multiplier.toFixed(4), JSON.stringify(detail ?? null), fair?.serverHash ?? null, fair?.clientSeed ?? null, fair?.nonce ?? null],
   );
   let balance: number;
   if (payout > 0) balance = await ledger(c, userId, 'win', payout, { ref: `${game}:${bet!.id}` });
-  else balance = Number((await cq1<{ balance: string }>('SELECT balance FROM users WHERE id = $1', [userId]))!.balance);
+  else balance = Number((await cq1<{ balance: string }>(c, 'SELECT balance FROM users WHERE id = $1', [userId]))!.balance);
   return { balance, payout, multiplier, betId: Number(bet!.id) };
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Database, GitCommit, Globe, KeyRound, RefreshCw, XCircle } from 'lucide-react';
+import { CheckCircle2, Database, Gamepad2, GitCommit, KeyRound, RefreshCw, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Card, Notice, PageHeader, Spinner } from '@/components/ui';
 import { api, fmtDate } from '@/lib/client';
@@ -28,22 +28,15 @@ export default function SystemPage() {
         <>
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
-              <p className="flex items-center gap-2 font-bold"><Globe size={18} className="text-accent-soft" /> API-Football</p>
-              {d.api.ok ? (
-                <div className="mt-4 space-y-2 text-sm">
-                  <p className="flex justify-between"><span className="text-slate-400">Plan</span><b>{d.api.plan ?? '—'}</b></p>
-                  <p className="flex justify-between"><span className="text-slate-400">Bitiş</span><b>{d.api.end ? fmtDate(d.api.end) : '—'}</b></p>
-                  <p className="flex justify-between"><span className="text-slate-400">Bugünkü istek</span><b>{d.api.requestsToday ?? '—'} / {d.api.limitDay ?? '—'}</b></p>
-                  {d.api.limitDay ? (
-                    <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                      <div className={`h-full ${d.api.requestsToday / d.api.limitDay > 0.85 ? 'bg-red-400' : 'bg-accent'}`} style={{ width: `${Math.min(100, (d.api.requestsToday / d.api.limitDay) * 100)}%` }} />
-                    </div>
-                  ) : null}
-                  <p className="text-xs text-slate-500">Bu bilgi 10 dakikada bir yenilenir (1 API isteği harcar).</p>
-                </div>
-              ) : (
-                <div className="mt-3"><Notice kind="error">{d.api.error}</Notice></div>
-              )}
+              <p className="flex items-center gap-2 font-bold"><Gamepad2 size={18} className="text-accent-soft" /> Oyun motoru</p>
+              <div className="mt-4 space-y-2 text-sm">
+                <p className="flex justify-between"><span className="text-slate-400">Crash turları</span><b>{d.game.rounds}</b></p>
+                <p className="flex justify-between"><span className="text-slate-400">Son tamamlanan tur</span><b>{d.game.last ? fmtDate(d.game.last) : '—'}</b></p>
+                <p className="flex justify-between"><span className="text-slate-400">Açık oyun oturumu</span><b>{d.game.sessions}</b></p>
+                <p className="flex justify-between"><span className="text-slate-400">Son 24 saatte el</span><b>{d.game.bets24}</b></p>
+                <p className="flex justify-between"><span className="text-slate-400">Bekleyen hesaplama</span>{d.game.unsettled > 0 ? <Badge color="amber">{d.game.unsettled}</Badge> : <Badge color="green">Yok</Badge>}</p>
+                <p className="text-xs text-slate-500">Crash turları, ziyaretçi istekleriyle sunucusuz olarak ilerler; bekleyen tur bir sonraki istekte hesaplanır.</p>
+              </div>
             </Card>
             <Card>
               <p className="flex items-center gap-2 font-bold"><Database size={18} className="text-accent-soft" /> Veritabanı</p>

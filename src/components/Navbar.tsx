@@ -1,21 +1,22 @@
 'use client';
-import { ArrowRight, Bell, CalendarDays, Gem, Home, LayoutDashboard, LifeBuoy, LogOut, Menu, Newspaper, Receipt, Settings, ShieldCheck, Star, Target, Trophy, UserRound, X } from 'lucide-react';
+import { ArrowRight, Bell, Coins, Crown, Gamepad2, HeartHandshake, History, Home, LayoutDashboard, LifeBuoy, LogOut, Menu, Newspaper, Settings, ShieldCheck, Trophy, UserRound, Wallet, X } from 'lucide-react';
 import { Logo } from './Logo';
 import SearchTrigger from './CommandPalette';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { api, onCouponChange, readCoupon, timeAgo } from '@/lib/client';
+import { api, timeAgo } from '@/lib/client';
+import { fmtCredits } from '@/lib/money';
 import { useAuth } from './AuthProvider';
 import { Avatar } from './ui';
 
 const LINKS = [
-  { href: '/maclar', label: 'Maçlar', icon: CalendarDays },
+  { href: '/oyunlar', label: 'Oyunlar', icon: Gamepad2 },
   { href: '/liderlik', label: 'Liderlik', icon: Trophy },
-  { href: '/kupon', label: 'Kupon', icon: Receipt },
+  { href: '/vip', label: 'VIP', icon: Crown },
+  { href: '/adil-oyun', label: 'Adil oyun', icon: ShieldCheck },
   { href: '/blog', label: 'Blog', icon: Newspaper },
-  { href: '/premium', label: 'Premium', icon: Gem },
   { href: '/destek', label: 'Destek', icon: LifeBuoy },
 ];
 
@@ -118,6 +119,24 @@ function NotificationBell() {
   );
 }
 
+function BalancePill() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+    <Link
+      href="/cuzdan"
+      className="flex h-9 items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 pl-2.5 pr-1 text-sm font-bold tabular-nums text-white transition hover:border-violet-400/60"
+      title="Cüzdan"
+    >
+      <Coins size={16} className="text-amber-300" />
+      <span className="max-w-[7rem] truncate">{fmtCredits(user.balance)}</span>
+      <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white">
+        <Wallet size={14} />
+      </span>
+    </Link>
+  );
+}
+
 function UserMenu() {
   const { user, setUser, toast } = useAuth();
   const router = useRouter();
@@ -138,9 +157,9 @@ function UserMenu() {
   const items = [
     { href: '/hesap', label: 'Hesabım', icon: Home },
     { href: `/uye/${user.id}`, label: 'Profilim', icon: UserRound },
-    { href: '/hesap/tahminler', label: 'Tahminlerim', icon: Target },
-    { href: '/hesap/favoriler', label: 'Favorilerim', icon: Star },
-    { href: '/hesap/kuponlar', label: 'Kuponlarım', icon: Receipt },
+    { href: '/cuzdan', label: 'Cüzdan', icon: Wallet },
+    { href: '/hesap/oyun-gecmisi', label: 'Oyun geçmişi', icon: History },
+    { href: '/hesap/sorumlu-oyun', label: 'Sorumlu oyun', icon: HeartHandshake },
     { href: '/destek', label: 'Destek talepleri', icon: LifeBuoy },
     { href: '/hesap/profil', label: 'Profil & ayarlar', icon: Settings },
   ];
@@ -150,7 +169,7 @@ function UserMenu() {
       <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition hover:bg-white/5" aria-label="Kullanıcı menüsü">
         <Avatar name={user.name} color={user.avatarColor} size={30} />
         <span className="hidden max-w-[8rem] truncate text-sm font-medium text-slate-200 lg:block">{user.name}</span>
-        {user.isPremium && !user.isAdmin && <Gem size={14} className="hidden text-amber-300 lg:block" />}
+
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-60 animate-fade-in overflow-hidden rounded-2xl border border-white/10 bg-ink-800 py-1 shadow-2xl shadow-black/50">
@@ -160,11 +179,9 @@ function UserMenu() {
             <p className="mt-1 text-xs">
               {user.isAdmin ? (
                 <span className="inline-flex items-center gap-1 text-violet-300"><ShieldCheck size={13} /> Yönetici</span>
-              ) : user.isPremium ? (
-                <span className="inline-flex items-center gap-1 text-amber-300"><Gem size={13} /> Premium üye</span>
               ) : (
-                <Link href="/premium" onClick={() => setOpen(false)} className="text-accent-soft hover:underline">
-                  Ücretsiz üye · Premium&apos;a geç
+                <Link href="/vip" onClick={() => setOpen(false)} className="inline-flex items-center gap-1 text-amber-300 hover:underline">
+                  <Crown size={13} /> VIP seviyeni gör
                 </Link>
               )}
             </p>
@@ -192,13 +209,6 @@ export default function Navbar() {
   const { user, enabled } = useAuth();
   const pathname = usePathname();
   const [mobile, setMobile] = useState(false);
-  const [couponCount, setCouponCount] = useState(0);
-
-  useEffect(() => {
-    const upd = () => setCouponCount(readCoupon().length);
-    upd();
-    return onCouponChange(upd);
-  }, []);
   useEffect(() => setMobile(false), [pathname]);
 
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -206,7 +216,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-ink-950/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-        <Link href="/" className="shrink-0" aria-label="Skor Çıkartıcı ana sayfa">
+        <Link href="/" className="shrink-0" aria-label="BloxyBet ana sayfa">
           <Logo size={30} />
         </Link>
 
@@ -220,9 +230,6 @@ export default function Navbar() {
               }`}
             >
               {l.label}
-              {l.href === '/kupon' && couponCount > 0 && (
-                <span className="ml-1 rounded-full bg-accent px-1.5 text-[10px] font-bold text-ink-950">{couponCount}</span>
-              )}
             </Link>
           ))}
         </nav>
@@ -231,6 +238,7 @@ export default function Navbar() {
           <SearchTrigger />
           {user ? (
             <>
+              <BalancePill />
               <NotificationBell />
               <UserMenu />
             </>
@@ -259,7 +267,6 @@ export default function Navbar() {
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${active(l.href) ? 'bg-white/5 text-white' : 'text-slate-300'}`}>
               <l.icon size={17} className="text-slate-500" /> {l.label}
-              {l.href === '/kupon' && couponCount > 0 && ` (${couponCount})`}
             </Link>
           ))}
           {!user && enabled && (

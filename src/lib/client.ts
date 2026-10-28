@@ -1,4 +1,4 @@
-// Tarayıcı tarafı yardımcılar: JSON API çağrısı, tarih biçimleri, kupon taslağı.
+// Tarayıcı tarafı yardımcılar: JSON API çağrısı, tarih biçimleri.
 'use client';
 
 export interface ApiResult<T> {
@@ -60,58 +60,3 @@ export function timeAgo(iso: string | null | undefined): string {
 
 export const pct = (p: number | null | undefined, digits = 0) =>
   p == null ? '—' : `%${(p * 100).toFixed(digits).replace('.', ',')}`;
-
-// ===== Kupon taslağı (tarayıcıda saklanır) =====
-export interface CouponPick {
-  fixtureId: number;
-  home: string;
-  away: string;
-  league: string | null;
-  date: string;
-  market: string; // ör. "1X2", "KG", "Alt/Üst 2.5"
-  selection: string; // ör. "1", "KG Var", "Üst"
-  prob: number; // modelin olasılığı (0-1)
-}
-
-const KEY = 'skor_coupon_draft';
-const EVT = 'skor-coupon-change';
-
-export function readCoupon(): CouponPick[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const v = raw ? JSON.parse(raw) : [];
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-
-export function writeCoupon(picks: CouponPick[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(picks));
-  } catch {
-    /* depolama kapalı olabilir */
-  }
-  window.dispatchEvent(new Event(EVT));
-}
-
-/** Aynı maça tek seçim: varsa değiştirir. Dönen değer: eklendi mi (true) / çıkarıldı mı (false) */
-export function togglePick(p: CouponPick): boolean {
-  const cur = readCoupon();
-  const same = cur.find((x) => x.fixtureId === p.fixtureId && x.market === p.market && x.selection === p.selection);
-  if (same) {
-    writeCoupon(cur.filter((x) => x !== same));
-    return false;
-  }
-  writeCoupon([...cur.filter((x) => x.fixtureId !== p.fixtureId), p]);
-  return true;
-}
-
-export function onCouponChange(cb: () => void): () => void {
-  window.addEventListener(EVT, cb);
-  window.addEventListener('storage', cb);
-  return () => {
-    window.removeEventListener(EVT, cb);
-    window.removeEventListener('storage', cb);
-  };
-}

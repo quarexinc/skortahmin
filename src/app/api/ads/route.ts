@@ -1,7 +1,6 @@
 // Yerleşim alanı için ağırlıklı rastgele reklam seçer ve gösterimi sayar.
 import { NextResponse } from 'next/server';
 import { AD_PLACEMENT_IDS } from '@/config/ads';
-import { getUser } from '@/lib/auth';
 import { dbConfigured, q } from '@/lib/db';
 import { getSettings } from '@/lib/settings';
 
@@ -15,10 +14,6 @@ export async function GET(req: Request) {
   try {
     const s = await getSettings();
     if (!s.adsEnabled) return NextResponse.json({ ad: null });
-    if (s.hideAdsForPremium) {
-      const u = await getUser();
-      if (u?.isPremium) return NextResponse.json({ ad: null });
-    }
     const ads = await q<Ad>(
       `SELECT id, kind, image_url, link_url, title, body, cta, html, weight FROM ads
        WHERE active AND placement = $1 AND (starts_at IS NULL OR starts_at <= NOW()) AND (ends_at IS NULL OR ends_at > NOW())`,

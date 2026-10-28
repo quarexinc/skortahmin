@@ -8,11 +8,9 @@ export interface ClientUser {
   email: string;
   name: string;
   role: 'user' | 'admin';
-  plan: 'free' | 'premium';
-  premiumUntil: string | null;
-  isPremium: boolean;
   isAdmin: boolean;
-  favoriteTeam: string | null;
+  vipLevel: number;
+  favoriteGame: string | null;
   bio: string | null;
   avatarColor: string;
   createdAt: string;

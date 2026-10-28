@@ -1,15 +1,22 @@
 // Rozet tanımları (sunucu hesaplar, istemci ikonlarla gösterir)
-import { Award, Bookmark, Crown, Crosshair, Eye, Flame, Footprints, Gem, Heart, Medal, MessageSquare, Mic, Receipt, Rocket, Shield, Sparkles, Star, Target, Trophy, Zap, type LucideIcon } from 'lucide-react';
+import { Award, Bomb, Bookmark, Cherry, Coins, Crown, Flame, Footprints, Gem, HandCoins, MessageSquare, Rocket, Shield, Spade, Sparkles, Star, Target, Trophy, Vault, Zap, type LucideIcon } from 'lucide-react';
 
 export interface BadgeStats {
-  predictions: number;
-  exact: number;
-  correct: number;
-  points: number;
-  comments: number;
-  coupons: number;
-  favorites: number;
-  premium: boolean;
+  bets: number;
+  wins: number;
+  /** kredi */
+  wagered: number;
+  bestMult: number;
+  biggestWin: number;
+  games: number;
+  mines: number;
+  crash: number;
+  slots: number;
+  blackjack: number;
+  bj21: number;
+  vip: number;
+  dailyClaims: number;
+  tickets: number;
   days: number;
   rank: number | null;
 }
@@ -24,27 +31,29 @@ export interface BadgeDef {
   progress: (s: BadgeStats) => [number, number];
 }
 
-const p = (v: number, t: number): [number, number] => [Math.min(v, t), t];
+const p = (v: number, t: number): [number, number] => [Math.min(Math.floor(v), t), t];
 
 export const BADGES: BadgeDef[] = [
-  { key: 'first', name: 'İlk adım', desc: 'İlk skor tahminini yap', icon: Footprints, color: '#4ade80', progress: (s) => p(s.predictions, 1) },
-  { key: 'pred10', name: 'Isınma turu', desc: '10 tahmin yap', icon: Zap, color: '#38bdf8', progress: (s) => p(s.predictions, 10) },
-  { key: 'pred50', name: 'Düzenli tahminci', desc: '50 tahmin yap', icon: Flame, color: '#f97316', progress: (s) => p(s.predictions, 50) },
-  { key: 'pred100', name: 'Tahmin makinesi', desc: '100 tahmin yap', icon: Rocket, color: '#a78bfa', progress: (s) => p(s.predictions, 100) },
-  { key: 'correct10', name: 'Doğru yolda', desc: '10 maçın sonucunu bil', icon: Target, color: '#22c55e', progress: (s) => p(s.correct, 10) },
-  { key: 'exact1', name: 'Nokta atışı', desc: 'İlk tam skorunu bil', icon: Crosshair, color: '#facc15', progress: (s) => p(s.exact, 1) },
-  { key: 'exact5', name: 'Keskin nişancı', desc: '5 tam skor bil', icon: Eye, color: '#fb923c', progress: (s) => p(s.exact, 5) },
-  { key: 'exact20', name: 'Kahin', desc: '20 tam skor bil', icon: Sparkles, color: '#e879f9', progress: (s) => p(s.exact, 20) },
-  { key: 'pts10', name: 'Puan avcısı', desc: '10 puana ulaş', icon: Star, color: '#fde047', progress: (s) => p(s.points, 10) },
-  { key: 'pts50', name: 'Yükselen yıldız', desc: '50 puana ulaş', icon: Medal, color: '#fbbf24', progress: (s) => p(s.points, 50) },
-  { key: 'pts200', name: 'Efsane', desc: '200 puana ulaş', icon: Trophy, color: '#f59e0b', progress: (s) => p(s.points, 200) },
-  { key: 'top10', name: 'Zirvede', desc: 'Genel sıralamada ilk 10’a gir', icon: Crown, color: '#fcd34d', progress: (s) => [s.rank != null && s.rank <= 10 && s.points > 0 ? 1 : 0, 1] },
-  { key: 'comment1', name: 'Söz sende', desc: 'İlk yorumunu yaz', icon: MessageSquare, color: '#60a5fa', progress: (s) => p(s.comments, 1) },
-  { key: 'comment25', name: 'Tribün sesi', desc: '25 yorum yaz', icon: Mic, color: '#818cf8', progress: (s) => p(s.comments, 25) },
-  { key: 'coupon1', name: 'Kupon ustası', desc: 'İlk kuponunu kaydet', icon: Receipt, color: '#2dd4bf', progress: (s) => p(s.coupons, 1) },
-  { key: 'fav5', name: 'Sadık taraftar', desc: '5 favori ekle', icon: Heart, color: '#f472b6', progress: (s) => p(s.favorites, 5) },
+  { key: 'first', name: 'İlk adım', desc: 'İlk elini oyna', icon: Footprints, color: '#4ade80', progress: (s) => p(s.bets, 1) },
+  { key: 'bets100', name: 'Isınma turu', desc: '100 el oyna', icon: Zap, color: '#38bdf8', progress: (s) => p(s.bets, 100) },
+  { key: 'bets1000', name: 'Masanın demirbaşı', desc: '1.000 el oyna', icon: Flame, color: '#f97316', progress: (s) => p(s.bets, 1000) },
+  { key: 'wins50', name: 'Kazanma alışkanlığı', desc: '50 el kazan', icon: Target, color: '#22c55e', progress: (s) => p(s.wins, 50) },
+  { key: 'allgames', name: 'Kaşif', desc: 'Dört oyunun hepsini dene', icon: Sparkles, color: '#e879f9', progress: (s) => p(s.games, 4) },
+  { key: 'mines', name: 'İstihkamcı', desc: "Mines'ta 50 el oyna", icon: Bomb, color: '#f43f5e', progress: (s) => p(s.mines, 50) },
+  { key: 'crash', name: 'Pilot', desc: "Crash'te 50 tur oyna", icon: Rocket, color: '#f472b6', progress: (s) => p(s.crash, 50) },
+  { key: 'slots', name: 'Makara ustası', desc: "Slots'ta 100 çevirme yap", icon: Cherry, color: '#fb7185', progress: (s) => p(s.slots, 100) },
+  { key: 'blackjack', name: 'Kart sayıcı', desc: "Blackjack'te 50 el oyna", icon: Spade, color: '#94a3b8', progress: (s) => p(s.blackjack, 50) },
+  { key: 'bj', name: 'Doğal 21', desc: 'Bir blackjack yakala', icon: Star, color: '#fde047', progress: (s) => p(s.bj21, 1) },
+  { key: 'x10', name: 'On kat', desc: '10x veya üzeri çarpan yakala', icon: Gem, color: '#22d3ee', progress: (s) => [s.bestMult >= 10 ? 1 : 0, 1] },
+  { key: 'x100', name: 'Yüz kat', desc: '100x veya üzeri çarpan yakala', icon: Trophy, color: '#f59e0b', progress: (s) => [s.bestMult >= 100 ? 1 : 0, 1] },
+  { key: 'bigwin', name: 'Büyük vurgun', desc: 'Tek elde 10.000 kredi kazan', icon: HandCoins, color: '#fbbf24', progress: (s) => p(s.biggestWin, 10_000) },
+  { key: 'wager100k', name: 'Yüksek hacim', desc: 'Toplam 100.000 kredi oyna', icon: Coins, color: '#a78bfa', progress: (s) => p(s.wagered, 100_000) },
+  { key: 'vip4', name: 'Gümüş kulüp', desc: 'Gümüş I VIP seviyesine ulaş', icon: Crown, color: '#cbd5e1', progress: (s) => p(s.vip, 4) },
+  { key: 'vip7', name: 'Altın kulüp', desc: 'Altın I VIP seviyesine ulaş', icon: Crown, color: '#fbbf24', progress: (s) => p(s.vip, 7) },
+  { key: 'daily7', name: 'Sadık oyuncu', desc: '7 kez günlük bonus al', icon: Vault, color: '#2dd4bf', progress: (s) => p(s.dailyClaims, 7) },
+  { key: 'top10', name: 'Zirvede', desc: 'Liderlikte ilk 10’a gir (toplam oynanan)', icon: Trophy, color: '#fcd34d', progress: (s) => [s.rank != null && s.rank <= 10 && s.wagered > 0 ? 1 : 0, 1] },
+  { key: 'ticket', name: 'Geri bildirimci', desc: 'İlk destek talebini aç', icon: MessageSquare, color: '#60a5fa', progress: (s) => p(s.tickets, 1) },
   { key: 'veteran', name: 'Kıdemli üye', desc: '30 gündür üyesin', icon: Shield, color: '#94a3b8', progress: (s) => p(s.days, 30) },
-  { key: 'premium', name: 'Premium', desc: 'Premium üye ol', icon: Gem, color: '#fbbf24', progress: (s) => [s.premium ? 1 : 0, 1] },
   { key: 'collector', name: 'Koleksiyoncu', desc: '10 rozet kazan', icon: Bookmark, color: '#4ade80', progress: () => [0, 1] },
   { key: 'all', name: 'Şampiyon', desc: 'Diğer tüm rozetleri kazan', icon: Award, color: '#fef08a', progress: () => [0, 1] },
 ];

@@ -5,6 +5,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
+import { vipFor } from '@/config/vip';
 import { dbConfigured, q1 } from '@/lib/db';
 
 export const SESSION_COOKIE = 'skor_session';
@@ -15,11 +16,11 @@ export interface SessionUser {
   email: string;
   name: string;
   role: 'user' | 'admin';
-  plan: 'free' | 'premium';
-  premiumUntil: string | null;
-  isPremium: boolean;
   isAdmin: boolean;
-  favoriteTeam: string | null;
+  /** VIP seviyesi (toplam oynanan krediye göre) */
+  vipLevel: number;
+  /** profilde gösterilen favori oyun (mines/crash/slots/blackjack) */
+  favoriteGame: string | null;
   bio: string | null;
   avatarColor: string;
   createdAt: string;
@@ -91,18 +92,14 @@ export function ageFrom(birth: Date | string | null | undefined): number | null 
 
 export function toSessionUser(r: UserRow): SessionUser {
   const isAdmin = r.role === 'admin';
-  const premiumActive =
-    r.plan === 'premium' && (r.premium_until == null || new Date(r.premium_until).getTime() > Date.now());
   return {
     id: r.id,
     email: r.email,
     name: r.name,
     role: isAdmin ? 'admin' : 'user',
-    plan: premiumActive ? 'premium' : 'free',
-    premiumUntil: r.premium_until ? new Date(r.premium_until).toISOString() : null,
-    isPremium: premiumActive || isAdmin,
     isAdmin,
-    favoriteTeam: r.favorite_team,
+    favoriteGame: r.favorite_team,
+    vipLevel: vipFor(Number(r.wagered ?? 0) / 100).current.level,
     bio: r.bio,
     avatarColor: r.avatar_color,
     createdAt: new Date(r.created_at).toISOString(),
