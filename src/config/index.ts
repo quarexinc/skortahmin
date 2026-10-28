@@ -66,8 +66,8 @@ export function istDateKey(d: Date): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-/** 2024 → "2023/24" sezonu etiketi */
+/** API-Football'da sezon başlangıç yılıyla anılır: 2024 → "2024/25" */
 export function seasonLabel(season: number | null): string {
   if (season == null) return '';
-  return `${season - 1}/${String(season).slice(2)}`;
+  return `${season}/${String(season + 1).slice(2)}`;
 }
