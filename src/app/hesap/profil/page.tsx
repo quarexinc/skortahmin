@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { Avatar, Button, Card, Field, Input, Notice, PageHeader, Textarea } from '@/components/ui';
+import { Avatar, Button, Card, Field, Input, Notice, PageHeader, Select, Textarea } from '@/components/ui';
 import { api } from '@/lib/client';
 
 const COLORS = ['#22c55e', '#38bdf8', '#f59e0b', '#a78bfa', '#f472b6', '#2dd4bf', '#fb7185', '#facc15', '#60a5fa'];
@@ -11,14 +11,14 @@ const COLORS = ['#22c55e', '#38bdf8', '#f59e0b', '#a78bfa', '#f472b6', '#2dd4bf'
 export default function ProfilePage() {
   const { user, setUser, toast } = useAuth();
   const router = useRouter();
-  const [p, setP] = useState({ name: '', favoriteTeam: '', bio: '', avatarColor: '#22c55e' });
+  const [p, setP] = useState({ name: '', favoriteGame: '', bio: '', avatarColor: '#22c55e' });
   const [pw, setPw] = useState({ current: '', next: '', next2: '' });
   const [del, setDel] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
-    if (user) setP({ name: user.name, favoriteTeam: user.favoriteTeam ?? '', bio: user.bio ?? '', avatarColor: user.avatarColor });
+    if (user) setP({ name: user.name, favoriteGame: user.favoriteGame ?? '', bio: user.bio ?? '', avatarColor: user.avatarColor });
   }, [user]);
   if (!user) return null;
 
@@ -94,8 +94,14 @@ export default function ProfilePage() {
             <Field label="Ad soyad">
               <Input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} required maxLength={60} />
             </Field>
-            <Field label="Tuttuğun takım">
-              <Input value={p.favoriteTeam} onChange={(e) => setP({ ...p, favoriteTeam: e.target.value })} maxLength={60} placeholder="Örn. Galatasaray" />
+            <Field label="Favori oyun">
+              <Select value={p.favoriteGame} onChange={(e) => setP({ ...p, favoriteGame: e.target.value })}>
+                <option value="">Seçilmedi</option>
+                <option value="crash">Crash</option>
+                <option value="mines">Mines</option>
+                <option value="slots">Slots</option>
+                <option value="blackjack">Blackjack</option>
+              </Select>
             </Field>
           </div>
           <Field label="Hakkımda" hint={`${p.bio.length}/280`}>
@@ -124,7 +130,7 @@ export default function ProfilePage() {
 
       <Card className="border-red-500/20">
         <h2 className="font-bold text-red-300">Hesabı sil</h2>
-        <p className="mt-1 text-sm text-slate-400">Tahminlerin, kuponların, favorilerin, yorumların ve destek kayıtların kalıcı olarak silinir. Bu işlem geri alınamaz.</p>
+        <p className="mt-1 text-sm text-slate-400">Bakiyen, kasan, oyun geçmişin, işlemlerin ve destek kayıtların kalıcı olarak silinir. Bu işlem geri alınamaz.</p>
         <form onSubmit={remove} className="mt-4 flex flex-wrap items-end gap-3">
           <div className="w-64"><Field label="Onay için şifren" error={err.del}><Input type="password" value={del} onChange={(e) => setDel(e.target.value)} required /></Field></div>
           <Button type="submit" variant="danger" loading={busy === 'del'}>Hesabımı kalıcı olarak sil</Button>

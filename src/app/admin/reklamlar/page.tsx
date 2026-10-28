@@ -42,7 +42,7 @@ export default function AdsAdmin() {
     <CrudManager
       endpoint="/api/admin/ads"
       title="Reklam bannerları"
-      subtitle="Görsel, metin veya HTML (ör. AdSense) reklamları yerleşim alanlarına yerleştir. Premium üyelere reklam gösterilmemesi Site ayarlarından açılıp kapatılabilir."
+      subtitle="Görsel, metin veya HTML (ör. AdSense) reklamları yerleşim alanlarına yerleştir. Reklamlar Site ayarlarından tamamen kapatılabilir. Kumar, bahis veya gerçek para içeren reklam yayınlama."
       icon={ImageIcon}
       emptyText="Henüz reklam yok"
       createLabel="Yeni reklam"

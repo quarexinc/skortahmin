@@ -16,7 +16,7 @@ export default function FaqAdmin() {
       toggleField="active"
       defaults={{ category: 'Genel', question: '', answer: '', sort: 0, active: true }}
       fields={[
-        { name: 'category', label: 'Kategori', type: 'text', placeholder: 'Genel, Üyelik, Tahminler…' },
+        { name: 'category', label: 'Kategori', type: 'text', placeholder: 'Genel, Krediler, Oyunlar, Adil oyun…' },
         { name: 'sort', label: 'Sıra', type: 'number' },
         { name: 'question', label: 'Soru', type: 'text', wide: true },
         { name: 'answer', label: 'Yanıt', type: 'textarea', rows: 5 },

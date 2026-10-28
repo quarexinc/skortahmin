@@ -10,7 +10,7 @@ export const GET = route<Ctx>(async (req, { params }) => {
   const id = int(params.id, 'Görüşme');
   const after = Number(new URL(req.url).searchParams.get('after') ?? 0) || 0;
   const chat = await q1(
-    `SELECT c.id, c.status, c.created_at, u.id AS user_id, u.name, u.email, u.plan, u.created_at AS user_created
+    `SELECT c.id, c.status, c.created_at, u.id AS user_id, u.name, u.email, u.wagered, u.balance, u.created_at AS user_created
      FROM chats c JOIN users u ON u.id = c.user_id WHERE c.id = $1`,
     [id],
   );

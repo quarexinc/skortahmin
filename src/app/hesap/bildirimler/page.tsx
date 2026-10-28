@@ -39,7 +39,7 @@ export default function NotificationsPage() {
       {items == null ? (
         <Spinner />
       ) : items.length === 0 ? (
-        <Empty icon={Bell} title="Bildirim yok">Tahminlerin sonuçlandığında veya taleplerine yanıt geldiğinde burada göreceksin.</Empty>
+        <Empty icon={Bell} title="Bildirim yok">VIP seviye atladığında, kredi eklendiğinde veya taleplerine yanıt geldiğinde burada göreceksin.</Empty>
       ) : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((n) => (

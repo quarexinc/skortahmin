@@ -39,7 +39,7 @@ export default function NewTicket() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
       <Link href="/destek" className="text-sm text-slate-400 hover:text-white"><ArrowLeft size={14} className="inline" /> Taleplerim</Link>
-      <div className="mt-3"><PageHeader title="Yeni destek talebi" subtitle="Sorununu olabildiğince ayrıntılı anlat; ilgili maç veya sayfa bağlantısını eklemen çözümü hızlandırır." /></div>
+      <div className="mt-3"><PageHeader title="Yeni destek talebi" subtitle="Sorununu olabildiğince ayrıntılı anlat; ilgili oyun, el numarası veya sayfa bağlantısını eklemen çözümü hızlandırır." /></div>
       <Card>
         <form onSubmit={submit} className="space-y-4">
           {err && <Notice kind="error">{err}</Notice>}
@@ -49,18 +49,19 @@ export default function NewTicket() {
               <Select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
                 <option value="genel">Genel</option>
                 <option value="hesap">Hesap & giriş</option>
-                <option value="premium">Premium & ödeme</option>
-                <option value="tahmin">Tahmin & veri</option>
+                <option value="oyun">Oyun & krediler</option>
+                <option value="adil">Adil oyun</option>
+                <option value="sorumlu">Sorumlu oyun</option>
                 <option value="hata">Hata bildirimi</option>
                 <option value="oneri">Öneri</option>
               </Select>
             </Field>
-            <Field label="Öncelik" hint={user.isPremium ? 'Premium üyelerin talepleri öncelikli işlenir.' : undefined}>
+            <Field label="Öncelik" hint={user.vipLevel >= 4 ? 'Gümüş I ve üzeri VIP üyelerin talepleri öncelikli işlenir.' : undefined}>
               <Select value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>
                 <option value="low">Düşük</option>
                 <option value="normal">Normal</option>
                 <option value="high">Yüksek</option>
-                {user.isPremium && <option value="urgent">Acil</option>}
+                {user.vipLevel >= 4 && <option value="urgent">Acil</option>}
               </Select>
             </Field>
           </div>

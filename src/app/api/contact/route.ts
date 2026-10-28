@@ -14,7 +14,7 @@ export const POST = route(async (req) => {
   if (!EMAIL_RE.test(email)) throw new HttpError(400, 'Geçerli bir e-posta adresi girin.');
   const subject = str(b.subject, 'Konu', { min: 3, max: 120 });
   const message = str(b.message, 'Mesaj', { min: 10, max: 4000 });
-  const category = ['genel', 'hesap', 'premium', 'tahmin', 'hata', 'oneri'].includes(b.category) ? b.category : 'iletisim';
+  const category = ['genel', 'hesap', 'oyun', 'adil', 'sorumlu', 'hata', 'oneri'].includes(b.category) ? b.category : 'iletisim';
 
   const [{ n }] = await q<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM tickets WHERE (guest_email = $1 OR user_id = $2) AND created_at > NOW() - INTERVAL '1 hour'`,

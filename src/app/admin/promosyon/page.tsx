@@ -8,7 +8,7 @@ import { fmtDate } from '@/lib/client';
 
 function randomCode() {
   const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return 'SKOR-' + Array.from({ length: 6 }, () => a[Math.floor(Math.random() * a.length)]).join('');
+  return 'BLOXY-' + Array.from({ length: 6 }, () => a[Math.floor(Math.random() * a.length)]).join('');
 }
 
 export default function PromoAdmin() {
@@ -17,15 +17,15 @@ export default function PromoAdmin() {
     <CrudManager
       endpoint="/api/admin/promo"
       title="Promosyon kodları"
-      subtitle="Üyeler Premium sayfasından kodu girerek belirtilen süre kadar Premium kazanır. Kampanya, çekiliş veya ödeme sonrası teslim için kullan."
+      subtitle="Üyeler Cüzdan sayfasından kodu girerek belirtilen miktarda sanal kredi kazanır. Etkinlik, bülten ve topluluk kampanyaları için kullan. Kodlar satılmaz; krediler paraya çevrilemez."
       icon={TicketPercent}
       emptyText="Henüz promosyon kodu yok"
       createLabel="Yeni kod"
       toggleField="active"
-      defaults={{ code: randomCode(), months: 1, max_uses: 1, active: true }}
+      defaults={{ code: randomCode(), credits: 500, max_uses: 100, active: true }}
       fields={[
         { name: 'code', label: 'Kod', type: 'text', hint: 'Büyük harf, rakam ve tire' },
-        { name: 'months', label: 'Premium süresi (ay)', type: 'number' },
+        { name: 'credits', label: 'Verilecek kredi', type: 'number' },
         { name: 'max_uses', label: 'Toplam kullanım limiti', type: 'number' },
         { name: 'expires_at', label: 'Son kullanma (isteğe bağlı)', type: 'datetime' },
         { name: 'note', label: 'Not (iç kullanım)', type: 'text', wide: true },
@@ -46,7 +46,7 @@ export default function PromoAdmin() {
         return (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <code className="rounded-lg bg-ink-900 px-2 py-1 font-mono text-sm font-bold tracking-wider text-accent-soft">{r.code}</code>
-            <span className="text-sm text-slate-300">{r.months} ay Premium</span>
+            <span className="text-sm text-slate-300">{Number(r.credits).toLocaleString('tr-TR')} kredi</span>
             <span className="text-xs text-slate-500">{r.used_count}/{r.max_uses} kullanım{r.expires_at ? ` · son: ${fmtDate(r.expires_at)}` : ''}</span>
             {expired && <Badge color="red">Süresi doldu</Badge>}
             {full && <Badge color="amber">Limit doldu</Badge>}

@@ -9,7 +9,7 @@ export const GET = route(async (req) => {
   const status = new URL(req.url).searchParams.get('status') ?? 'open';
   const items = await q(
     `SELECT c.id, c.status, c.admin_unread, c.last_message_at, u.id AS user_id, u.name, u.email, u.avatar_color,
-       (u.plan = 'premium') AS premium,
+       (u.wagered >= 4000000) AS vip,
        (SELECT body FROM chat_messages m WHERE m.chat_id = c.id ORDER BY id DESC LIMIT 1) AS last_body,
        (SELECT sender FROM chat_messages m WHERE m.chat_id = c.id ORDER BY id DESC LIMIT 1) AS last_sender
      FROM chats c JOIN users u ON u.id = c.user_id

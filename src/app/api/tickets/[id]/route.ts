@@ -23,7 +23,7 @@ export const GET = route<Ctx>(async (_req, { params }) => {
   const u = await requireUser();
   const t = await load(Number(params.id), u);
   const ticket = await q1(
-    `SELECT t.*, u.name AS user_name, u.email AS user_email, u.plan AS user_plan
+    `SELECT t.*, u.name AS user_name, u.email AS user_email, (u.wagered >= 4000000) AS user_vip
      FROM tickets t LEFT JOIN users u ON u.id = t.user_id WHERE t.id = $1`,
     [t.id],
   );

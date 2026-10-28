@@ -1,37 +1,28 @@
 'use client';
-import BadgeGrid from '@/components/BadgeGrid';
-import type { EarnedBadge } from '@/config/badges';
-import { Gem, LayoutDashboard, LifeBuoy, Receipt, Target } from 'lucide-react';
 
+import { Bomb, Cherry, Crown, Gamepad2, HeartHandshake, LifeBuoy, Rocket, Spade, Trophy, Wallet, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { Avatar, Badge, Card, Spinner, STATUS_TR } from '@/components/ui';
-import { api, fmtDate } from '@/lib/client';
+import BadgeGrid from '@/components/BadgeGrid';
+import AgeVerify from '@/components/games/AgeVerify';
+import { Avatar, Badge, Card, Spinner } from '@/components/ui';
+import type { BadgeStats, EarnedBadge } from '@/config/badges';
+import { vipFor } from '@/config/vip';
+import { api, fmtDate, timeAgo } from '@/lib/client';
+import { fmtCredits, fmtMult, toCredits } from '@/lib/money';
 
 interface Summary {
-  stats: Record<string, number>;
-  rank: number | null;
-  premiumRequest: { status: string; months: number; created_at: string } | null;
+  stats: BadgeStats | null;
+  badges: EarnedBadge[];
+  games: { game: string; bets: number; wagered: number; payout: number; best: number }[];
+  recent: { id: number; game: string; amount: string; payout: string; multiplier: string; created_at: string }[];
+  openTickets: number;
+  unread: number;
+  rakeback: number;
 }
 
-function BadgesStrip() {
-  const [b, setB] = useState<EarnedBadge[] | null>(null);
-  useEffect(() => {
-    api<{ badges: EarnedBadge[] }>('/api/badges').then((r) => setB(r.data?.badges ?? []));
-  }, []);
-  if (!b) return null;
-  const earned = b.filter((x) => x.earned);
-  return (
-    <Card>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="font-bold">Rozetler <span className="text-sm font-normal text-slate-500">{earned.length}/{b.length}</span></p>
-        <Link href="/hesap/rozetler" className="text-sm text-accent-soft hover:underline">Tümü</Link>
-      </div>
-      {earned.length ? <BadgeGrid badges={earned} compact showLocked={false} /> : <p className="text-sm text-slate-400">İlk tahminini yaparak ilk rozetini kazan.</p>}
-    </Card>
-  );
-}
+const GAME = { mines: { n: 'Mines', i: Bomb, c: 'text-rose-300' }, crash: { n: 'Crash', i: Rocket, c: 'text-pink-300' }, slots: { n: 'Slots', i: Cherry, c: 'text-amber-300' }, blackjack: { n: 'Blackjack', i: Spade, c: 'text-emerald-300' } } as Record<string, { n: string; i: typeof Bomb; c: string }>;
 
 export default function AccountHome() {
   const { user } = useAuth();
@@ -40,73 +31,131 @@ export default function AccountHome() {
     api<Summary>('/api/account').then((r) => setD(r.data));
   }, []);
   if (!user) return null;
-  if (!d) return <Spinner />;
-  const s = d.stats;
-  const acc = s.scored > 0 ? Math.round((s.correct / s.scored) * 100) : null;
-
-  const tiles = [
-    { label: 'Toplam puan', value: s.points, href: '/hesap/tahminler' },
-    { label: 'Sıralama', value: d.rank ? `#${d.rank}` : '—', href: '/liderlik' },
-    { label: 'Tahmin', value: s.predictions, href: '/hesap/tahminler' },
-    { label: 'İsabet oranı', value: acc == null ? '—' : `%${acc}`, href: '/hesap/tahminler' },
-    { label: 'Tam skor', value: s.exact, href: '/hesap/tahminler' },
-    { label: 'Kupon', value: s.coupons, href: '/hesap/kuponlar' },
-    { label: 'Favori', value: s.favorites, href: '/hesap/favoriler' },
-    { label: 'Açık talep', value: s.open_tickets, href: '/destek' },
-  ];
+  const vip = vipFor(toCredits(user.wagered));
+  const earned = d?.badges.filter((b) => b.earned) ?? [];
 
   return (
     <div className="space-y-6">
       <Card className="flex flex-wrap items-center gap-4">
-        <Avatar name={user.name} color={user.avatarColor} size={56} />
+        <Avatar name={user.name} color={user.avatarColor} size={60} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-black">Merhaba, {user.name.split(' ')[0]}!</h1>
-          <p className="text-sm text-slate-400">
-            Üyelik: {fmtDate(user.createdAt)} · {user.favoriteTeam ? `Takımı: ${user.favoriteTeam}` : 'Takımını profilinden ekleyebilirsin'}
-          </p>
+          <p className="text-xl font-black">{user.name}</p>
+          <p className="text-sm text-slate-400">{user.email} · üye {fmtDate(user.createdAt)}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Badge color="violet"><Crown size={12} /> {vip.current.name}</Badge>
+            {user.isAdmin && <Badge color="red">Yönetici</Badge>}
+            {user.selfExcludedUntil && <Badge color="amber">Molada · {fmtDate(user.selfExcludedUntil)}</Badge>}
+          </div>
         </div>
-        {user.isAdmin ? (
-          <Link href="/admin" className="inline-flex items-center gap-2 rounded-xl bg-violet-500/15 px-4 py-2 text-sm font-semibold text-violet-300"><LayoutDashboard size={16} /> Yönetim paneli</Link>
-        ) : user.isPremium ? (
-          <Badge color="amber"><Gem size={12} /> Premium{user.premiumUntil ? ` · ${fmtDate(user.premiumUntil)} tarihine kadar` : ''}</Badge>
-        ) : (
-          <Link href="/premium" className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-ink-950"><Gem size={16} /> Premium&apos;a geç</Link>
-        )}
+        <Link href={`/uye/${user.id}`} className="text-sm text-violet-300 hover:underline">Herkese açık profil</Link>
       </Card>
 
-      {d.premiumRequest && !user.isPremium && (
-        <Card className="flex items-center justify-between gap-3 text-sm">
-          <span>
-            Premium talebin ({d.premiumRequest.months} ay) · {fmtDate(d.premiumRequest.created_at)}
-          </span>
-          <Badge color={STATUS_TR[d.premiumRequest.status]?.color}>{STATUS_TR[d.premiumRequest.status]?.label}</Badge>
-        </Card>
-      )}
+      {!user.ageVerified && <AgeVerify />}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {tiles.map((t) => (
-          <Link key={t.label} href={t.href} className="card p-4 transition hover:border-accent/30">
-            <p className="text-xs text-slate-500">{t.label}</p>
-            <p className="mt-1 text-2xl font-black tabular-nums">{t.value}</p>
-          </Link>
-        ))}
-      </div>
-
-      <BadgesStrip />
-
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { href: '/maclar', icon: Target, t: 'Tahmin yap', d: 'Bugünün maçlarına skor tahmini gir.' },
-          { href: '/kupon', icon: Receipt, t: 'Kupon oluştur', d: 'Model olasılıklarıyla kupon hazırla.' },
-          { href: '/destek/yeni', icon: LifeBuoy, t: 'Destek talebi aç', d: 'Sorununu ekibimize ilet.' },
+          { l: 'Oyun bakiyesi', v: fmtCredits(user.balance), h: '/cuzdan', i: Wallet },
+          { l: 'Kasa', v: fmtCredits(user.vault), h: '/cuzdan', i: Wallet },
+          { l: 'Toplanacak rakeback', v: d ? fmtCredits(d.rakeback) : '…', h: '/cuzdan', i: Zap },
+          { l: 'Toplam oynanan', v: fmtCredits(user.wagered, { compact: true }), h: '/vip', i: Crown },
         ].map((x) => (
-          <Link key={x.href} href={x.href} className="card p-4 transition hover:border-accent/30">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/15 text-accent-soft"><x.icon size={20} /></span>
-            <p className="mt-2 font-semibold">{x.t}</p>
-            <p className="text-sm text-slate-400">{x.d}</p>
+          <Link key={x.l} href={x.h} className="card p-4 transition hover:border-violet-400/30">
+            <p className="flex items-center gap-1.5 text-xs text-slate-400"><x.i size={13} /> {x.l}</p>
+            <p className="mt-1 text-2xl font-black tabular-nums">{x.v}</p>
           </Link>
         ))}
       </div>
+
+      <Card>
+        <div className="flex items-center justify-between">
+          <p className="font-bold">VIP ilerlemesi</p>
+          <Link href="/vip" className="text-sm text-violet-300 hover:underline">Seviyeler</Link>
+        </div>
+        <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/5">
+          <div className="h-full rounded-full bg-gradient-to-r from-violet-400 to-pink-400" style={{ width: `${Math.round(vip.progress * 100)}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-slate-400">{vip.next ? `${vip.current.name} → ${vip.next.name} · %${Math.round(vip.progress * 100)}` : 'En yüksek seviyedesin.'}</p>
+      </Card>
+
+      {!d ? (
+        <Spinner />
+      ) : (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <p className="mb-3 flex items-center gap-2 font-bold"><Gamepad2 size={18} className="text-violet-300" /> Oyunlara göre</p>
+              {d.games.length === 0 ? (
+                <p className="text-sm text-slate-400">Henüz oynamadın. <Link href="/oyunlar" className="text-violet-300 underline">Bir oyun seç</Link>.</p>
+              ) : (
+                <ul className="space-y-2.5 text-sm">
+                  {d.games.map((g) => {
+                    const m = GAME[g.game];
+                    const net = g.payout - g.wagered;
+                    return (
+                      <li key={g.game} className="flex items-center gap-3">
+                        <m.i size={18} className={m.c} />
+                        <span className="flex-1 font-medium">{m.n}</span>
+                        <span className="text-xs text-slate-500">{g.bets} el</span>
+                        <span className="w-20 text-right tabular-nums text-slate-300">{fmtCredits(g.wagered, { compact: true })}</span>
+                        <span className={`w-20 text-right tabular-nums ${net >= 0 ? 'text-accent-soft' : 'text-red-300'}`}>{net >= 0 ? '+' : ''}{fmtCredits(net, { compact: true })}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+            <Card>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="font-bold">Son eller</p>
+                <Link href="/hesap/oyun-gecmisi" className="text-sm text-violet-300 hover:underline">Tümü</Link>
+              </div>
+              {d.recent.length === 0 ? (
+                <p className="text-sm text-slate-400">Oyun geçmişin burada görünecek.</p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {d.recent.map((b) => {
+                    const m = GAME[b.game];
+                    const net = Number(b.payout) - Number(b.amount);
+                    return (
+                      <li key={b.id} className="flex items-center gap-3">
+                        <m.i size={16} className={m.c} />
+                        <span className="flex-1 text-slate-400">{timeAgo(b.created_at)}</span>
+                        <span className="w-14 text-right tabular-nums text-slate-400">{fmtMult(b.multiplier)}</span>
+                        <span className={`w-20 text-right tabular-nums ${net >= 0 ? 'text-accent-soft' : 'text-red-300'}`}>{net >= 0 ? '+' : ''}{fmtCredits(net)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Card>
+          </div>
+
+          <Card>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="font-bold">Rozetler <span className="text-sm font-normal text-slate-500">{earned.length}/{d.badges.length}</span></p>
+              <Link href="/hesap/rozetler" className="text-sm text-violet-300 hover:underline">Tümü</Link>
+            </div>
+            {earned.length ? <BadgeGrid badges={earned} compact showLocked={false} /> : <p className="text-sm text-slate-400">İlk elini oynayarak ilk rozetini kazan.</p>}
+          </Card>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { href: '/oyunlar', icon: Gamepad2, t: 'Oyna', d: 'Crash, Mines, Slots ve Blackjack.' },
+              { href: '/destek', icon: LifeBuoy, t: 'Destek', d: d.openTickets ? `${d.openTickets} açık talebin var.` : 'Bir sorun mu var? Bize yaz.' },
+              { href: '/hesap/sorumlu-oyun', icon: HeartHandshake, t: 'Sorumlu oyun', d: 'Mola, limit ve hatırlatıcılar.' },
+            ].map((x) => (
+              <Link key={x.href} href={x.href} className="card group p-5 transition hover:border-violet-400/30">
+                <x.icon size={22} className="text-violet-300" />
+                <p className="mt-3 font-semibold">{x.t}</p>
+                <p className="mt-1 text-sm text-slate-400">{x.d}</p>
+              </Link>
+            ))}
+          </div>
+          {d.stats && d.stats.rank && (
+            <p className="flex items-center gap-2 text-sm text-slate-400"><Trophy size={16} className="text-amber-300" /> Toplam oynanan sıralamasında <b className="text-white">#{d.stats.rank}</b></p>
+          )}
+        </>
+      )}
     </div>
   );
 }

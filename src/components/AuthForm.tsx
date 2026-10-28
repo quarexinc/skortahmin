@@ -11,8 +11,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const { setUser, refresh, toast, enabled } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || (mode === 'register' ? '/hesap' : '/');
-  const [form, setForm] = useState({ name: '', email: '', password: '', password2: '', acceptTerms: false });
+  const next = params.get('next') || (mode === 'register' ? '/oyunlar' : '/');
+  const [form, setForm] = useState({ name: '', email: '', password: '', password2: '', birthDate: '', acceptTerms: false });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +59,11 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           <Input value={form.name} onChange={set('name')} required minLength={2} maxLength={60} autoComplete="name" placeholder="Adın Soyadın" />
         </Field>
       )}
+      {mode === 'register' && (
+        <Field label="Doğum tarihi" hint="BloxyBet yalnızca 18 yaş ve üzerindekilere açıktır.">
+          <Input type="date" value={form.birthDate} onChange={set('birthDate')} required max={new Date(Date.now() - 18 * 365.25 * 86400000).toISOString().slice(0, 10)} />
+        </Field>
+      )}
       <Field label="E-posta">
         <Input type="email" value={form.email} onChange={set('email')} required autoComplete="email" placeholder="ornek@eposta.com" />
       </Field>
@@ -96,7 +101,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           <label className="flex items-start gap-2.5 text-sm text-slate-300">
             <input type="checkbox" checked={form.acceptTerms} onChange={set('acceptTerms')} className="mt-0.5 h-4 w-4 accent-[#22c55e]" />
             <span>
-              18 yaşından büyüğüm;{' '}
+              18 yaşından büyüğüm, kredilerin sanal olduğunu ve paraya çevrilemeyeceğini biliyorum;{' '}
               <Link href="/kullanim-kosullari" target="_blank" className="text-accent-soft underline">
                 kullanım koşullarını
               </Link>{' '}

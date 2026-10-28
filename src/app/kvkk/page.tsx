@@ -8,11 +8,11 @@ export default function Page() {
   return (
     <Prose title="KVKK aydınlatma metni" updated="28 Ekim 2026">
       <p>
-        6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca, Skor Çıkartıcı olarak veri sorumlusu sıfatıyla kişisel
+        6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca, BloxyBet olarak veri sorumlusu sıfatıyla kişisel
         verilerinizi aşağıda açıklanan kapsamda işliyoruz.
       </p>
       <h2>İşlenen veriler</h2>
-      <p>Kimlik (ad soyad), iletişim (e-posta), müşteri işlem (tahmin, kupon, destek kayıtları) ve işlem güvenliği (IP, giriş kayıtları) verileri.</p>
+      <p>Kimlik (ad soyad, doğum tarihi), iletişim (e-posta), müşteri işlem (oyun geçmişi, sanal kredi işlemleri, destek kayıtları) ve işlem güvenliği (IP, giriş kayıtları) verileri.</p>
       <h2>İşleme amaçları</h2>
       <ul>
         <li>Üyelik işlemlerinin yürütülmesi ve hizmetin sunulması,</li>

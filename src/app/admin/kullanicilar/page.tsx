@@ -1,35 +1,40 @@
 'use client';
-import { CheckCircle2, ChevronLeft, ChevronRight, Gem, StickyNote, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Crown, StickyNote, X, XCircle } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { Avatar, Badge, Button, Card, Field, Input, Notice, PageHeader, Select, Spinner } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Field, Input, Notice, PageHeader, Spinner } from '@/components/ui';
+import { txType } from '@/config/txTypes';
+import { vipFor } from '@/config/vip';
 import { api, fmtDate, fmtDateTime, timeAgo } from '@/lib/client';
+import { fmtCredits, fmtMult, toCredits } from '@/lib/money';
 
 interface U {
   id: number;
   name: string;
   email: string;
   role: string;
-  plan: string;
-  premium_until: string | null;
   banned: boolean;
   ban_reason: string | null;
   created_at: string;
   last_login_at: string | null;
   avatar_color: string;
-  predictions: number;
-  points: number;
+  balance: string;
+  vault: string;
+  wagered: string;
+  birth_date: string | null;
+  self_excluded_until: string | null;
 }
 
-const premiumActive = (u: U) => u.plan === 'premium' && (!u.premium_until || new Date(u.premium_until).getTime() > Date.now());
+const excluded = (u: U) => !!u.self_excluded_until && new Date(u.self_excluded_until).getTime() > Date.now();
 
 function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; onChanged: () => void }) {
   const { user: me, toast } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [d, setD] = useState<any>(null);
-  const [months, setMonths] = useState('1');
+  const [amt, setAmt] = useState('');
+  const [amtReason, setAmtReason] = useState('');
   const [reason, setReason] = useState('');
   const [temp, setTemp] = useState<string | null>(null);
   const load = useCallback(() => api(`/api/admin/users/${id}`).then((r) => setD(r.data)), [id]);
@@ -57,7 +62,8 @@ function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; o
   };
 
   if (!d) return <Card><Spinner /></Card>;
-  const u: U & { favorite_team: string | null; bio: string | null } = d.user;
+  const u: U & { favorite_team: string | null; bio: string | null; rakeback: string; daily_wager_limit: string | null } = d.user;
+  const lvl = vipFor(toCredits(u.wagered)).current;
   const self = me?.id === u.id;
   return (
     <Card className="space-y-5">
@@ -68,30 +74,63 @@ function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; o
           <p className="truncate text-sm text-slate-400">{u.email} · #{u.id}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {u.role === 'admin' && <Badge color="violet">Yönetici</Badge>}
-            {premiumActive(u) ? <Badge color="amber"><Gem size={11} /> Premium{u.premium_until ? ` · ${fmtDate(u.premium_until)}` : ' · süresiz'}</Badge> : <Badge>Ücretsiz</Badge>}
+            <Badge color="slate"><Crown size={11} /> {lvl.name}</Badge>
+            {u.birth_date ? <Badge color="green">18+ doğrulandı</Badge> : <Badge color="amber">Yaş doğrulanmadı</Badge>}
+            {excluded(u) && <Badge color="amber">Molada · {fmtDate(u.self_excluded_until)}</Badge>}
             {u.banned && <Badge color="red">Askıda</Badge>}
           </div>
         </div>
         <button onClick={onClose} className="text-slate-500 hover:text-white" aria-label="Kapat"><X size={18} /></button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center text-sm sm:grid-cols-5">
-        {Object.entries({ Tahmin: d.stats.predictions, Puan: d.stats.points, Yorum: d.stats.comments, Kupon: d.stats.coupons, Talep: d.stats.tickets }).map(([k, v]) => (
-          <div key={k} className="rounded-xl bg-ink-900 p-2"><p className="text-[11px] text-slate-500">{k}</p><p className="font-bold">{v as number}</p></div>
+      <div className="grid grid-cols-3 gap-2 text-center text-sm sm:grid-cols-5 xl:grid-cols-3 2xl:grid-cols-5">
+        {Object.entries({
+          Bakiye: fmtCredits(u.balance, { compact: true }),
+          Kasa: fmtCredits(u.vault, { compact: true }),
+          Oynanan: fmtCredits(u.wagered, { compact: true }),
+          El: d.stats.bets,
+          'Net sonuç': fmtCredits(Number(d.stats.paid_sum) - Number(d.stats.bet_sum), { compact: true }),
+          'Bonus toplamı': fmtCredits(d.stats.bonuses, { compact: true }),
+          'En iyi çarpan': d.stats.best ? fmtMult(d.stats.best) : '—',
+          Rakeback: fmtCredits(u.rakeback, { compact: true }),
+          '24s limit': u.daily_wager_limit ? fmtCredits(u.daily_wager_limit, { compact: true }) : 'yok',
+          Talep: d.stats.tickets,
+        }).map(([k, v]) => (
+          <div key={k} className="rounded-xl bg-ink-900 p-2"><p className="text-[11px] text-slate-500">{k}</p><p className="font-bold tabular-nums">{v as string}</p></div>
         ))}
       </div>
-      <p className="text-xs text-slate-500">Kayıt: {fmtDateTime(u.created_at)} · Son giriş: {u.last_login_at ? timeAgo(u.last_login_at) : '—'}{u.favorite_team ? ` · Takım: ${u.favorite_team}` : ''}</p>
+      <p className="text-xs text-slate-500">Kayıt: {fmtDateTime(u.created_at)} · Son giriş: {u.last_login_at ? timeAgo(u.last_login_at) : '—'}{u.birth_date ? ` · Doğum: ${fmtDate(u.birth_date)}` : ''}</p>
       {u.banned && u.ban_reason && <Notice kind="error">Askı sebebi: {u.ban_reason}</Notice>}
 
       <div className="space-y-3 border-t border-white/5 pt-4">
-        <p className="label-muted">Premium</p>
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="w-36"><Select value={months} onChange={(e) => setMonths(e.target.value)}>
-            {['1', '3', '6', '12', '0'].map((m) => <option key={m} value={m}>{m === '0' ? 'Süresiz' : `${m} ay ekle`}</option>)}
-          </Select></div>
-          <Button size="sm" onClick={() => act('grant_premium', { months: Number(months) })}>Premium tanımla</Button>
-          {premiumActive(u) && <Button size="sm" variant="secondary" onClick={() => act('revoke_premium', {}, 'Premium kaldırılsın mı?')}>Premium&apos;u kaldır</Button>}
-        </div>
+        <p className="label-muted">Sanal kredi düzeltmesi</p>
+        <form
+          className="grid gap-2 sm:grid-cols-[110px_1fr_auto]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            act('adjust_balance', { amount: amt, reason: amtReason }, `${amt} kredi ${Number(amt.replace(',', '.')) > 0 ? 'eklensin' : 'düşülsün'} mi?`).then(() => { setAmt(''); setAmtReason(''); });
+          }}
+        >
+          <Input value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9.,-]/g, ''))} placeholder="+500 / -250" required />
+          <Input value={amtReason} onChange={(e) => setAmtReason(e.target.value)} placeholder="Açıklama (zorunlu)" minLength={3} maxLength={200} required />
+          <Button size="sm" type="submit">Uygula</Button>
+        </form>
+        <p className="text-[11px] text-slate-500">Eksi tutar bakiyeden düşer. Her düzeltme işlem defterine ve kayıtlara yazılır.</p>
+        {d.transactions.length > 0 && (
+          <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
+            {d.transactions.map((t: { id: number; type: string; amount: string; balance_after: string; created_at: string; note: string | null }) => {
+              const ty = txType(t.type);
+              return (
+                <li key={t.id} className="flex items-center gap-2">
+                  <ty.icon size={12} className={ty.color} />
+                  <span className="min-w-0 flex-1 truncate text-slate-400">{ty.label}{t.note ? ` · ${t.note}` : ''}</span>
+                  <span className={Number(t.amount) >= 0 ? 'text-accent-soft' : 'text-slate-400'}>{Number(t.amount) >= 0 ? '+' : ''}{fmtCredits(t.amount)}</span>
+                  <span className="w-16 text-right text-slate-500">{timeAgo(t.created_at)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       <div className="space-y-3 border-t border-white/5 pt-4">
@@ -99,6 +138,7 @@ function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; o
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => act('reset_password', {}, 'Geçici şifre oluşturulsun mu? Kullanıcının mevcut oturumları kapanır.')}>Şifre sıfırla</Button>
           <Button size="sm" variant="secondary" onClick={() => act('logout')}>Oturumlarını kapat</Button>
+          {u.birth_date && <Button size="sm" variant="secondary" onClick={() => act('reset_age', {}, 'Yaş doğrulaması sıfırlansın mı? Kullanıcı yeniden doğrulayana kadar oynayamaz.')}>Yaş doğrulamasını sıfırla</Button>}
           {!self && (u.role === 'admin'
             ? <Button size="sm" variant="secondary" onClick={() => act('set_role', { role: 'user' }, 'Yönetici yetkisi kaldırılsın mı?')}>Yöneticilikten çıkar</Button>
             : <Button size="sm" variant="secondary" onClick={() => act('set_role', { role: 'admin' }, 'Bu kullanıcı yönetici yapılsın mı? Tüm panele erişebilecek.')}>Yönetici yap</Button>)}
@@ -200,7 +240,7 @@ function UsersInner() {
       <PageHeader title="Kullanıcılar" subtitle={d ? `${d.total} kayıt` : undefined} />
       <div className="mb-4 flex flex-wrap gap-2">
         <div className="min-w-[220px] flex-1"><Input value={qText} onChange={(e) => { setQText(e.target.value); setPage(0); }} placeholder="Ad, e-posta veya #id ara…" /></div>
-        {[['all', 'Tümü'], ['free', 'Ücretsiz'], ['premium', 'Premium'], ['admin', 'Yönetici'], ['banned', 'Askıda']].map(([k, l]) => (
+        {[['all', 'Tümü'], ['players', 'Oynayanlar'], ['unverified', 'Yaş doğrulamasız'], ['excluded', 'Molada'], ['admin', 'Yönetici'], ['banned', 'Askıda']].map(([k, l]) => (
           <button key={k} onClick={() => { setFilter(k); setPage(0); }} className={`chip ${filter === k ? 'chip-active' : ''}`}>{l}</button>
         ))}
       </div>
@@ -210,7 +250,7 @@ function UsersInner() {
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-white/5 text-left text-xs uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3">Kullanıcı</th><th className="px-2 py-3">Durum</th><th className="px-2 py-3 text-right">Tahmin</th><th className="px-2 py-3">Kayıt</th><th className="px-4 py-3">Son giriş</th>
+                  <th className="px-4 py-3">Kullanıcı</th><th className="px-2 py-3">Durum</th><th className="px-2 py-3 text-right">Bakiye</th><th className="px-2 py-3 text-right">Oynanan</th><th className="px-2 py-3">Kayıt</th><th className="px-4 py-3">Son giriş</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -224,11 +264,13 @@ function UsersInner() {
                     </td>
                     <td className="px-2 py-2.5"><div className="flex flex-wrap gap-1">
                       {u.role === 'admin' && <Badge color="violet">Yönetici</Badge>}
-                      {premiumActive(u) && <Badge color="amber">Premium</Badge>}
                       {u.banned && <Badge color="red">Askıda</Badge>}
-                      {u.role !== 'admin' && !premiumActive(u) && !u.banned && <Badge>Ücretsiz</Badge>}
+                      {excluded(u) && <Badge color="amber">Molada</Badge>}
+                      {!u.birth_date && u.role !== 'admin' && <Badge>Yaş ?</Badge>}
+                      {u.role !== 'admin' && !u.banned && !excluded(u) && u.birth_date && <Badge color="green">Aktif</Badge>}
                     </div></td>
-                    <td className="px-2 py-2.5 text-right tabular-nums">{u.predictions} <span className="text-xs text-slate-500">({u.points}p)</span></td>
+                    <td className="px-2 py-2.5 text-right tabular-nums">{fmtCredits(Number(u.balance) + Number(u.vault), { compact: true })}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums text-slate-400">{fmtCredits(u.wagered, { compact: true })}</td>
                     <td className="px-2 py-2.5 text-xs text-slate-400">{fmtDate(u.created_at)}</td>
                     <td className="px-4 py-2.5 text-xs text-slate-400">{u.last_login_at ? timeAgo(u.last_login_at) : '—'}</td>
                   </tr>

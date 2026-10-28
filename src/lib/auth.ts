@@ -5,6 +5,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
+import { vipFor } from '@/config/vip';
 import { dbConfigured, q1 } from '@/lib/db';
 
 export const SESSION_COOKIE = 'skor_session';
@@ -15,14 +16,21 @@ export interface SessionUser {
   email: string;
   name: string;
   role: 'user' | 'admin';
-  plan: 'free' | 'premium';
-  premiumUntil: string | null;
-  isPremium: boolean;
   isAdmin: boolean;
-  favoriteTeam: string | null;
+  /** VIP seviyesi (toplam oynanan krediye göre) */
+  vipLevel: number;
+  /** profilde gösterilen favori oyun (mines/crash/slots/blackjack) */
+  favoriteGame: string | null;
   bio: string | null;
   avatarColor: string;
   createdAt: string;
+  /** kuruş (1/100 kredi) */
+  balance: number;
+  vault: number;
+  wagered: number;
+  birthDate: string | null;
+  ageVerified: boolean;
+  selfExcludedUntil: string | null;
 }
 
 function secret(): Uint8Array {
@@ -64,25 +72,44 @@ interface UserRow {
   banned: boolean;
   token_version: number;
   created_at: Date;
+  balance?: string | number;
+  vault?: string | number;
+  wagered?: string | number;
+  birth_date?: Date | string | null;
+  self_excluded_until?: Date | null;
+}
+
+export function ageFrom(birth: Date | string | null | undefined): number | null {
+  if (!birth) return null;
+  const b = new Date(birth);
+  if (Number.isNaN(b.getTime())) return null;
+  const now = new Date();
+  let a = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) a--;
+  return a;
 }
 
 export function toSessionUser(r: UserRow): SessionUser {
   const isAdmin = r.role === 'admin';
-  const premiumActive =
-    r.plan === 'premium' && (r.premium_until == null || new Date(r.premium_until).getTime() > Date.now());
   return {
     id: r.id,
     email: r.email,
     name: r.name,
     role: isAdmin ? 'admin' : 'user',
-    plan: premiumActive ? 'premium' : 'free',
-    premiumUntil: r.premium_until ? new Date(r.premium_until).toISOString() : null,
-    isPremium: premiumActive || isAdmin,
     isAdmin,
-    favoriteTeam: r.favorite_team,
+    favoriteGame: r.favorite_team,
+    vipLevel: vipFor(Number(r.wagered ?? 0) / 100).current.level,
     bio: r.bio,
     avatarColor: r.avatar_color,
     createdAt: new Date(r.created_at).toISOString(),
+    balance: Number(r.balance ?? 0),
+    vault: Number(r.vault ?? 0),
+    wagered: Number(r.wagered ?? 0),
+    birthDate: r.birth_date ? new Date(r.birth_date).toISOString().slice(0, 10) : null,
+    ageVerified: (ageFrom(r.birth_date) ?? 0) >= 18,
+    selfExcludedUntil:
+      r.self_excluded_until && new Date(r.self_excluded_until).getTime() > Date.now() ? new Date(r.self_excluded_until).toISOString() : null,
   };
 }
 

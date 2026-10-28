@@ -1,17 +1,19 @@
-// Marka işareti: stilize futbol topu + yükselen grafik çizgisi (SVG)
+// BloxyBet marka işareti: yuvarlatılmış rozet içinde "B" monogramı ve küçük elmas (nötr, oyun/platform çağrışımı yok)
 export function LogoMark({ size = 32, className = '' }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className={className} aria-hidden>
-      <rect width="40" height="40" rx="11" fill="url(#lg)" />
-      <circle cx="20" cy="20" r="11" stroke="#05080f" strokeWidth="2.4" />
-      <path d="M20 13.5l5.2 3.8-2 6.1h-6.4l-2-6.1z" fill="#05080f" />
-      <path d="M20 9v4.5M25.2 17.3l4.6-1.6M23.2 23.4l2.9 4M16.8 23.4l-2.9 4M14.8 17.3l-4.6-1.6" stroke="#05080f" strokeWidth="2" strokeLinecap="round" />
       <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="40" y2="40">
-          <stop stopColor="#4ade80" />
-          <stop offset="1" stopColor="#16a34a" />
+        <linearGradient id="bb-g" x1="0" y1="0" x2="40" y2="40">
+          <stop stopColor="#a78bfa" />
+          <stop offset="1" stopColor="#ec4899" />
         </linearGradient>
       </defs>
+      <rect width="40" height="40" rx="12" fill="url(#bb-g)" />
+      <path
+        d="M13 10.5h8.2c3.6 0 5.8 1.8 5.8 4.7 0 1.9-1 3.3-2.6 3.9 2.1.6 3.4 2.2 3.4 4.4 0 3.3-2.4 5.3-6.4 5.3H13V10.5Zm4.2 7.3h3.4c1.4 0 2.2-.7 2.2-1.9s-.8-1.9-2.2-1.9h-3.4v3.8Zm0 7.6h4c1.5 0 2.4-.8 2.4-2.1 0-1.3-.9-2.1-2.4-2.1h-4v4.2Z"
+        fill="#0b0618"
+      />
+      <path d="M31 7.5l2 2.5-2 2.5-2-2.5z" fill="#0b0618" opacity=".85" />
     </svg>
   );
 }
@@ -20,8 +22,8 @@ export function Logo({ size = 32 }: { size?: number }) {
   return (
     <span className="flex items-center gap-2">
       <LogoMark size={size} />
-      <span className="text-[15px] font-black tracking-tight">
-        Skor <span className="text-accent-soft">Çıkartıcı</span>
+      <span className="text-[16px] font-black tracking-tight">
+        Bloxy<span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Bet</span>
       </span>
     </span>
   );

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { clearSession, HttpError, requireUser, toSessionUser } from '@/lib/auth';
 import { audit, q, q1 } from '@/lib/db';
 import { body, route, str } from '@/lib/http';
+import { userBadges } from '@/lib/userStats';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,43 +10,43 @@ const COLORS = ['#22c55e', '#38bdf8', '#f59e0b', '#a78bfa', '#f472b6', '#2dd4bf'
 
 export const GET = route(async () => {
   const u = await requireUser();
-  const s = await q1(
-    `SELECT
-      (SELECT COUNT(*)::int FROM predictions WHERE user_id = $1) AS predictions,
-      (SELECT COUNT(*)::int FROM predictions WHERE user_id = $1 AND status = 'scored') AS scored,
-      (SELECT COALESCE(SUM(points),0)::int FROM predictions WHERE user_id = $1) AS points,
-      (SELECT COUNT(*)::int FROM predictions WHERE user_id = $1 AND points = 3) AS exact,
-      (SELECT COUNT(*)::int FROM predictions WHERE user_id = $1 AND points >= 1) AS correct,
-      (SELECT COUNT(*)::int FROM coupons WHERE user_id = $1) AS coupons,
-      (SELECT COUNT(*)::int FROM favorites WHERE user_id = $1) AS favorites,
-      (SELECT COUNT(*)::int FROM tickets WHERE user_id = $1 AND status <> 'closed') AS open_tickets,
-      (SELECT COUNT(*)::int FROM comments WHERE user_id = $1) AS comments`,
-    [u.id],
-  );
-  const rank = await q1<{ rank: number }>(
-    `SELECT rank FROM (
-       SELECT user_id, RANK() OVER (ORDER BY SUM(points) DESC) AS rank
-       FROM predictions WHERE status = 'scored' GROUP BY user_id
-     ) r WHERE user_id = $1`,
-    [u.id],
-  );
-  const premiumRequest = await q1(
-    `SELECT id, status, months, created_at FROM premium_requests WHERE user_id = $1 ORDER BY id DESC LIMIT 1`,
-    [u.id],
-  );
-  return { user: u, stats: s, rank: rank ? Number(rank.rank) : null, premiumRequest };
+  const [badges, games, recent, misc] = await Promise.all([
+    userBadges(u.id),
+    q<{ game: string; bets: number; wagered: string; payout: string; best: string | null }>(
+      `SELECT game, COUNT(*)::int AS bets, SUM(amount)::text AS wagered, SUM(payout)::text AS payout, MAX(multiplier)::text AS best
+       FROM bets WHERE user_id = $1 GROUP BY game ORDER BY SUM(amount) DESC`,
+      [u.id],
+    ),
+    q(`SELECT id, game, amount, payout, multiplier, created_at FROM bets WHERE user_id = $1 ORDER BY id DESC LIMIT 8`, [u.id]),
+    q1<{ open_tickets: number; unread: number; rakeback: string }>(
+      `SELECT (SELECT COUNT(*)::int FROM tickets WHERE user_id = $1 AND status <> 'closed') AS open_tickets,
+              (SELECT COUNT(*)::int FROM notifications WHERE user_id = $1 AND NOT read) AS unread,
+              (SELECT rakeback::text FROM users WHERE id = $1) AS rakeback`,
+      [u.id],
+    ),
+  ]);
+  return {
+    user: u,
+    stats: badges?.stats ?? null,
+    badges: badges?.badges ?? [],
+    games: games.map((g) => ({ game: g.game, bets: g.bets, wagered: Number(g.wagered), payout: Number(g.payout), best: Number(g.best ?? 0) })),
+    recent,
+    openTickets: misc?.open_tickets ?? 0,
+    unread: misc?.unread ?? 0,
+    rakeback: Number(misc?.rakeback ?? 0),
+  };
 });
 
 export const PATCH = route(async (req) => {
   const u = await requireUser();
   const b = await body(req);
   const name = str(b.name, 'Ad soyad', { min: 2, max: 60 });
-  const favoriteTeam = str(b.favoriteTeam, 'Tuttuğun takım', { max: 60, optional: true }) || null;
+  const favoriteGame = ['mines', 'crash', 'slots', 'blackjack'].includes(b.favoriteGame) ? b.favoriteGame : null;
   const bio = str(b.bio, 'Hakkımda', { max: 280, optional: true }) || null;
   const color = COLORS.includes(b.avatarColor) ? b.avatarColor : u.avatarColor;
   const row = await q1(
     `UPDATE users SET name = $2, favorite_team = $3, bio = $4, avatar_color = $5 WHERE id = $1 RETURNING *`,
-    [u.id, name, favoriteTeam, bio, color],
+    [u.id, name, favoriteGame, bio, color],
   );
   return { user: toSessionUser(row) };
 });

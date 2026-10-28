@@ -1,35 +1,39 @@
 'use client';
 
-// Ctrl/Cmd+K ile açılan hızlı arama: sayfalar, maçlar (bugün/yarın), üyeler, blog yazıları.
-import { ArrowDown, ArrowRight, ArrowUp, CalendarDays, CornerDownLeft, FileText, Search, UserRound, X } from 'lucide-react';
+// Ctrl/Cmd+K ile açılan hızlı arama: oyunlar, sayfalar, üyeler, blog yazıları.
+import { ArrowDown, ArrowRight, ArrowUp, CornerDownLeft, Gamepad2, FileText, Search, UserRound, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/client';
 
 interface Hit {
-  type: 'page' | 'match' | 'user' | 'post';
+  type: 'page' | 'game' | 'user' | 'post';
   title: string;
   sub?: string;
   href: string;
 }
 
 const PAGES: Hit[] = [
-  ['Maç programı', '/maclar'],
+  ['Oyun lobisi', '/oyunlar'],
+  ['Crash', '/oyunlar/crash'],
+  ['Mines', '/oyunlar/mines'],
+  ['Slots', '/oyunlar/slots'],
+  ['Blackjack', '/oyunlar/blackjack'],
+  ['Cüzdan', '/cuzdan'],
+  ['VIP kulübü', '/vip'],
+  ['Adil oyun', '/adil-oyun'],
   ['Liderlik tablosu', '/liderlik'],
-  ['Kupon oluşturucu', '/kupon'],
   ['Blog', '/blog'],
-  ['Premium üyelik', '/premium'],
   ['Destek talepleri', '/destek'],
   ['Yeni destek talebi', '/destek/yeni'],
   ['Hesabım', '/hesap'],
-  ['Tahminlerim', '/hesap/tahminler'],
-  ['Favorilerim', '/hesap/favoriler'],
-  ['Kuponlarım', '/hesap/kuponlar'],
+  ['Oyun geçmişi', '/hesap/oyun-gecmisi'],
+  ['Kredi işlemleri', '/hesap/islemler'],
+  ['Sorumlu oyun ayarları', '/hesap/sorumlu-oyun'],
   ['Profil & ayarlar', '/hesap/profil'],
   ['Rozetlerim', '/hesap/rozetler'],
   ['Sıkça sorulan sorular', '/sss'],
   ['İletişim', '/iletisim'],
-  ['Tahminler nasıl hesaplanır?', '/nasil-calisir'],
   ['Hakkımızda', '/hakkimizda'],
   ['Kullanım koşulları', '/kullanim-kosullari'],
   ['Gizlilik politikası', '/gizlilik'],
@@ -37,7 +41,7 @@ const PAGES: Hit[] = [
   ['Sorumlu oyun', '/sorumlu-oyun'],
 ].map(([title, href]) => ({ type: 'page' as const, title, href }));
 
-const ICON = { page: ArrowRight, match: CalendarDays, user: UserRound, post: FileText };
+const ICON = { page: ArrowRight, game: Gamepad2, user: UserRound, post: FileText };
 const norm = (s: string) => s.toLocaleLowerCase('tr-TR');
 
 export default function SearchTrigger() {
@@ -117,7 +121,7 @@ function Palette({ onClose }: { onClose: () => void }) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
-            placeholder="Takım, maç, üye, sayfa veya yazı ara…"
+            placeholder="Oyun, sayfa, oyuncu veya yazı ara…"
             className="h-14 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-500"
           />
           <button onClick={onClose} aria-label="Kapat" className="text-slate-500 hover:text-white"><X size={18} /></button>

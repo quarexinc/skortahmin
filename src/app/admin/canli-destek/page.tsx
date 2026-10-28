@@ -1,14 +1,15 @@
 'use client';
 import CannedPicker from '@/components/admin/CannedPicker';
-import { Gem, MessagesSquare } from 'lucide-react';
+import { Crown, MessagesSquare } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Avatar, Badge, Button, Empty, PageHeader, Spinner } from '@/components/ui';
 import { api, fmtDate, timeAgo } from '@/lib/client';
+import { fmtCredits } from '@/lib/money';
 
-interface Chat { id: number; status: string; admin_unread: number; last_message_at: string; user_id: number; name: string; email: string; avatar_color: string; premium: boolean; last_body: string | null; last_sender: string | null }
+interface Chat { id: number; status: string; admin_unread: number; last_message_at: string; user_id: number; name: string; email: string; avatar_color: string; vip: boolean; last_body: string | null; last_sender: string | null }
 interface Msg { id: number; sender: 'user' | 'admin'; body: string; created_at: string }
 
 const QUICK = [
@@ -66,7 +67,7 @@ function Conversation({ id, onChange }: { id: number; onChange: () => void }) {
       <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
         <div className="min-w-0 flex-1">
           <Link href={`/admin/kullanicilar?q=${chat.user_id}`} className="font-semibold hover:text-violet-200">{chat.name}</Link>
-          <p className="truncate text-xs text-slate-500">{chat.email} · {chat.plan === 'premium' ? 'Premium' : 'Ücretsiz'} · üye {fmtDate(chat.user_created)}</p>
+          <p className="truncate text-xs text-slate-500">{chat.email} · bakiye {fmtCredits(chat.balance ?? 0, { compact: true })} · oynanan {fmtCredits(chat.wagered ?? 0, { compact: true })} · üye {fmtDate(chat.user_created)}</p>
         </div>
         {chat.status === 'open' ? (
           <Button size="sm" variant="secondary" onClick={() => setStatus('close')}>Görüşmeyi kapat</Button>
@@ -120,7 +121,7 @@ export default function LiveChatAdmin() {
             <button key={c.id} onClick={() => setSel(c.id)} className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-white/5 ${sel === c.id ? 'bg-violet-500/10' : ''}`}>
               <Avatar name={c.name} color={c.avatar_color} size={32} />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-sm font-semibold"><span className="truncate">{c.name}</span>{c.premium && <Gem size={12} className="shrink-0 text-amber-300" />}</p>
+                <p className="flex items-center gap-1.5 text-sm font-semibold"><span className="truncate">{c.name}</span>{c.vip && <Crown size={12} className="shrink-0 text-amber-300" />}</p>
                 <p className="truncate text-xs text-slate-500">{c.last_sender === 'admin' ? 'Siz: ' : ''}{c.last_body}</p>
                 <p className="text-[10px] text-slate-600">{timeAgo(c.last_message_at)}</p>
               </div>

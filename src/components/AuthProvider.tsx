@@ -8,14 +8,18 @@ export interface ClientUser {
   email: string;
   name: string;
   role: 'user' | 'admin';
-  plan: 'free' | 'premium';
-  premiumUntil: string | null;
-  isPremium: boolean;
   isAdmin: boolean;
-  favoriteTeam: string | null;
+  vipLevel: number;
+  favoriteGame: string | null;
   bio: string | null;
   avatarColor: string;
   createdAt: string;
+  balance: number;
+  vault: number;
+  wagered: number;
+  birthDate: string | null;
+  ageVerified: boolean;
+  selfExcludedUntil: string | null;
 }
 
 interface Ctx {
@@ -24,6 +28,8 @@ interface Ctx {
   unread: { notifications: number; chat: number };
   refresh: () => Promise<void>;
   setUser: (u: ClientUser | null) => void;
+  /** oyun yanıtlarından gelen yeni bakiyeyi anında yansıt (kuruş) */
+  setBalance: (units: number) => void;
   toast: (msg: string, kind?: 'success' | 'error' | 'info') => void;
 }
 
@@ -72,6 +78,8 @@ export default function AuthProvider({
     return () => clearInterval(t);
   }, [enabled, refresh]);
 
+  const setBalance = useCallback((units: number) => setUser((u) => (u ? { ...u, balance: units } : u)), []);
+
   const toast = useCallback((msg: string, kind: Toast['kind'] = 'success') => {
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, msg, kind }]);
@@ -79,7 +87,7 @@ export default function AuthProvider({
   }, []);
 
   return (
-    <AuthCtx.Provider value={{ user, enabled, unread, refresh, setUser, toast }}>
+    <AuthCtx.Provider value={{ user, enabled, unread, refresh, setUser, toast, setBalance }}>
       {children}
       <div className="pointer-events-none fixed inset-x-0 top-16 z-[60] flex flex-col items-center gap-2 px-4">
         {toasts.map((t) => (

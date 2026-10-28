@@ -67,8 +67,9 @@ export default function ContactForm() {
           <Select value={f.category} onChange={set('category')}>
             <option value="genel">Genel</option>
             <option value="hesap">Hesap & giriş</option>
-            <option value="premium">Premium & ödeme</option>
-            <option value="tahmin">Tahmin & veri</option>
+            <option value="oyun">Oyun & krediler</option>
+            <option value="adil">Adil oyun</option>
+            <option value="sorumlu">Sorumlu oyun</option>
             <option value="hata">Hata bildirimi</option>
             <option value="oneri">Öneri</option>
           </Select>
