@@ -7,7 +7,7 @@ import { dbConfigured, q } from '@/lib/db';
 import { readingMinutes } from '@/lib/markdown';
 import { getSettings } from '@/lib/settings';
 
-export const metadata: Metadata = { title: 'Blog', description: 'Maç önizlemeleri, model güncellemeleri ve analiz rehberleri.' };
+export const metadata: Metadata = { title: 'Blog', description: 'Oyun rehberleri, etkinlikler ve analiz rehberleri.' };
 export const dynamic = 'force-dynamic';
 
 interface P { slug: string; title: string; excerpt: string | null; cover_url: string | null; tags: string | null; views: number; created_at: Date; body: string }
@@ -29,14 +29,14 @@ export default async function Blog({ searchParams }: { searchParams: { etiket?: 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Blog</h1>
-      <p className="mt-2 text-slate-400">Maç önizlemeleri, model güncellemeleri ve analiz rehberleri.</p>
+      <p className="mt-2 text-slate-400">Oyun rehberleri, etkinlikler ve analiz rehberleri.</p>
       {tag && (
         <p className="mt-3 text-sm">
           <span className="text-slate-400">Etiket:</span> <b>{tag}</b> · <Link href="/blog" className="text-accent-soft underline">Tümünü göster</Link>
         </p>
       )}
       {posts.length === 0 ? (
-        <div className="mt-8"><Empty icon={FileText} title="Henüz yazı yok">Yakında maç önizlemeleri ve analiz yazıları burada olacak.</Empty></div>
+        <div className="mt-8"><Empty icon={FileText} title="Henüz yazı yok">Yakında oyun rehberleri ve etkinlik duyuruları burada olacak.</Empty></div>
       ) : (
         <>
           <Link href={`/blog/${first.slug}`} className="card group mt-8 grid overflow-hidden p-0 transition hover:border-accent/30 md:grid-cols-2">

@@ -1,107 +1,53 @@
-# ⚽ Skor Çıkartıcı
+# BloxyBet
 
-Gerçek verilerle çalışan futbol maç tahmin ve analiz platformu. **Tek veri kaynağı: API-Football v3** —
-uygulamadaki her sayı (fikstür, form, H2H, istatistik, gol krallığı) çalışma anında API'den çekilir.
-Mock/placeholder veri **yoktur**; veri yoksa "Veri şu anda mevcut değil" gösterilir.
+Sanal kredilerle oynanan sosyal casino: **Crash, Mines, Slots, Blackjack**.
+Gerçek para, kripto veya herhangi bir değerli şey yatırılmaz, kazanılmaz, çekilmez. Krediler satın alınamaz ve paraya çevrilemez. **18+**
 
 ## Çalıştırma
 
 ```bash
 npm install
-npm run dev
-# → http://localhost:3000
+npm run dev   # http://localhost:3000
 ```
 
-Ortam değişkenlerini `.env.example` dosyasını `.env.local` olarak kopyalayıp doldurun.
+`.env.example` dosyasını `.env.local` olarak kopyalayıp doldurun. Veritabanı şeması ilk istekte otomatik oluşturulur ve yönetici hesabı `ADMIN_EMAIL` / `ADMIN_PASSWORD` ile açılır.
 
 ## Teknoloji
 
-- Next.js 14 (App Router) + TypeScript, Tailwind CSS (koyu tema, mobil öncelikli)
-- Backend: Next.js API Route Handler'ları (`src/app/api/...`). Frontend asla dış API'ye doğrudan gitmez.
-- Tüm tarih/saat `Europe/Istanbul` (TSİ) ve `tr-TR` biçimindedir.
+- Next.js 14 (App Router) + TypeScript, Tailwind CSS, lucide-react ikonları
+- Postgres (`pg`), Vercel üzerinde Neon
+- Oturum: imzalı JWT (HS256), httpOnly çerez; bcrypt şifre özeti
+
+## Oyunlar
+
+| Oyun | Kural | Ev avantajı / RTP |
+| --- | --- | --- |
+| Crash | Tur başlamadan bahis, çarpan `e^(0.00006·ms)` ile büyür, patlamadan önce çık. Otomatik çıkış desteklenir. | %1 (RTP %99) |
+| Mines | 5×5 alan, 1–24 mayın. Çarpan `0,99 × Π (25−i)/(25−m−i)` | %1 |
+| Slots | 5 makara × 3 satır, 10 çizgi, joker ve dağınık | RTP ≈ %96,1 (3M çevirme simülasyonu) |
+| Blackjack | 6 deste, krupiye S17, blackjack 3:2, double, bir split | ≈ %0,5 |
+
+Crash sunucusuzdur: turlar istekler geldikçe `pg_advisory_xact_lock` altında ilerler, otomatik çıkışlar tembel olarak hesaplanır.
+
+### Adil oyun
+
+`HMAC_SHA256(sunucuTohumu, "istemciTohumu:nonce:imleç")` çıktısının her 4 baytı bir [0,1) sayısına çevrilir. Sunucu tohumunun SHA-256 hash'i önceden gösterilir; tohum değiştirildiğinde eski tohum açıklanır. `/adil-oyun` sayfası tarayıcıda (Web Crypto) doğrulama yapar. Crash'te her turun kendi tohumu vardır.
+
+## Sanal kredi ekonomisi
+
+- Krediler veritabanında 1/100 birim (BIGINT) olarak tutulur.
+- Her bakiye değişikliği `transactions` defterine işlem sonrası bakiyeyle yazılır; bakiye `SELECT … FOR UPDATE` kilidi ve negatif bakiye korumasıyla güncellenir.
+- Kaynaklar: hoş geldin kredisi, günlük bonus (VIP'e göre), musluk (bakiye 1 kredinin altındayken), rakeback, 13 VIP seviyesi ödülü, promosyon kodları, yönetici düzeltmesi.
+- Kasa: krediler oyun bakiyesinden ayrılıp kilitlenebilir.
+
+## Sorumlu oyun
+
+Kayıtta ve oyundan önce doğum tarihiyle 18+ doğrulaması, ilk ziyarette 18+ kapısı, mola (kısaltılamaz), 24 saatlik oyun limiti (artırmak için 24 saat bekleme), oturum hatırlatıcısı.
 
 ## Sayfalar
 
-| Yol | Açıklama |
-| --- | --- |
-| `/` | Bugünden itibaren **10 günün** maçları: tarih şeridi, lig filtresi (13 lig), takım araması, maç kartları |
-| `/mac/[fixtureId]` | Maç analizi: **Genel Özet & Tahmin**, **Form & Kariyer**, **Karşılıklı Maçlar (H2H)**, **Oyuncular** |
+`/` açılış · `/oyunlar` lobi · `/oyunlar/{crash,mines,slots,blackjack}` · `/cuzdan` · `/vip` · `/adil-oyun` · `/liderlik` · `/hesap` (genel bakış, oyun geçmişi, kredi işlemleri, rozetler, bildirimler, sorumlu oyun, profil) · `/uye/[id]` · `/destek` · `/blog` · `/sss` · yasal sayfalar.
 
-## API (backend)
+## Yönetim paneli (`/admin`)
 
-| Endpoint | Görev |
-| --- | --- |
-| `GET /api/fixtures?date=YYYY-MM-DD` | Günün maçları (yalnızca config'deki 13 lig, cache'li) |
-| `GET /api/match/[fixtureId]/analysis` | Tek yanıtta: maç, takım istatistikleri, son maçlar, H2H, puan durumu, oyuncular, API tahmini **+ Poisson model çıktısı** |
-| `GET /api/teams/[teamId]?league=&season=` | Takım künyesi + sezon istatistiği |
-
-## Tahmin motoru (`src/lib/prediction.ts`)
-
-Poisson tabanlı; girdilerin tamamı API'den gelen gerçek istatistiklerdir:
-
-1. **Sezon (ağırlık %55):** `λ_home = (AFH × DAA) / μ_home`, `λ_away = (AFA × DAH) / μ_away`
-   - AFH/DAH = ev sahibinin ev ortalamaları, AFA/DAA = deplasmanın deplasman ortalamaları
-     (`/teams/statistics` → `goals.for.average.home` vb.)
-   - μ_home/μ_away = lig ortalamaları (`/standings` içindeki ev/depl gol verilerinden)
-2. **Form (ağırlık %25):** son 10 bitmiş maçtan maç başı atılan/yenilen gollerle simetrik saldırı/savunma λ'ları
-3. **H2H (ağırlık %20):** son 10 bitmiş H2H maçından aynı simetrik formül; **veri yoksa ağırlık 0'a çekilir**
-   ve kalan ağırlıklar normalize edilir.
-4. Skor matrisi: `P(i,j) = Poisson(i; λ_home) × Poisson(j; λ_away)`, i,j = 0…6 (λ > 4 ise 0…8);
-   matris toplamı 1'e normalize edilir. 1X2, KG Var/Yok, Alt/Üst 1.5–2.5–3.5 ve en olası 5 skor
-   bu matristen türetilir. Modelin önerdiği skor = matristeki en yüksek olasılıklı (i,j).
-
-Model hesabı **yalnızca sunucu tarafında** (`/api/match/.../analysis`) yapılır; frontend sadece gösterir.
-"Bu tahmin nasıl hesaplandı?" açılır bölümü tüm girdileri, ağırlıkları ve formülü şeffaf biçimde listeler.
-API'nin kendi `/predictions` çıktısı var ise yan yana karşılaştırma tablosu olarak gösterilir
-(ücretsiz planda sınırlı/bozuk gelirse "API tahmini bu planda mevcut değil" kutusu görünür).
-
-## Cache & kotalar (`src/lib/cache.ts`, `src/lib/apiFootball.ts`)
-
-| Veri | TTL |
-| --- | --- |
-| Fikstür (tarih), maç detayı, API tahmini | 60 dk |
-| Takım istatistikleri, H2H, takım künyesi, oyuncular | 24 saat |
-| Son maçlar (form), puan durumu | 6 saat |
-| Kupalar | 7 gün |
-
-- İstek kuyruğu: iki API isteği arası ≥ 250 ms (dakikada ~10 limitine karşı).
-- Günlük istek sayacı `console.log` ile izlenir; 95'e yaklaşınca yeni upstream isteği açılmaz,
-  yalnızca cache'ten servis edilir.
-- İlk açılışta ana sayfa ~10 istek (10 gün × 1) harcar; ikinci ziyarette 0.
-
-## Ücretsiz plan notları (canlı doğrulanmıştır)
-
-- Canlı fikstür, maç detayı, H2H (tam geçmiş), `/predictions` ve `/teams?id=` **çalışır**.
-- `last` parametresi ücretsiz planda kapalıdır → form/H2H, sezon fikstür listelerinden ve tam H2H
-  geçmişinden **sunucu tarafında** son 10 bitmiş maçla üretilir.
-- Fikstür erişimi de sınırlıdır (canlı doğrulandı: `2026-08-26 → 2026-08-28` aralığı). Erişilemeyen
-  tarihler için ilgili gün kartında Türkçe plan kısıtı uyarısı ("Bu tarih aralığına ücretsiz plandan
-  erişilemiyor…") gösterilir; uydurma veri asla gösterilmez.
-- Dakikada ~10 istek limiti, **kayan 1-dakika penceresi** (≤9 istek/dk) + 429'da 30 sn backoff ile
-  korunur. Bu yüzden soğuk cache'te bir maç analizi ~1 dakika sürebilir; sonraki ziyaretlerde
-  (TTL'ler dolana kadar) yanıt ~50 ms'te, 0 API isteğiyle gelir.
-- Sezon bazlı veriler (istatistik, puan durumu, kadro, gol krallığı) ücretsiz planda **yalnızca
-  2022–2024** sezonları için erişilebilir. Mevcut sezon (örn. 2026) için bu bölümler en yakın
-  erişilebilir sezonun son gerçek verileriyle doldurulur ve arayüzde **açıkça etiketlenir**;
-  H2H ve maç verisi her zaman günceldir.
-- `/trophies` takım parametresi kabul etmediği için kupa vitrini, takımdan öncelikli oyuncunun
-  `?player=` vitrininden gösterilir; veri yoksa ilgili boş durum mesajı görünür.
-
-
-## Üyelik, destek ve yönetim (v2)
-
-Postgres (Neon) bağlandığında aşağıdakiler etkinleşir; veritabanı yoksa site yalnızca maç analizi olarak çalışır.
-
-- **Üyelik:** kayıt / giriş (bcrypt + imzalı JWT çerez), profil, şifre değiştirme, tüm cihazlardan çıkış, hesap silme, hatalı giriş kilidi
-- **Premium:** ücretsiz/premium plan; ayrıntılı olasılıklar sunucu tarafında kilitlenir; premium talebi → admin onayı
-- **Destek:** destek talepleri (kategori, öncelik, durum), ziyaretçi iletişim formu, canlı destek sohbeti, bildirimler
-- **Topluluk:** skor tahmin yarışması (tam skor 3, sonuç 1 puan, otomatik puanlama), liderlik tablosu, kupon oluşturucu, favoriler, maç yorumları ve şikâyet
-- **Yönetim paneli (`/admin`):** gösterge paneli, kullanıcı yönetimi (premium, rol, askı, şifre sıfırlama), premium talepleri, destek, canlı destek gelen kutusu, yorum moderasyonu, tahmin puanlama, duyurular, toplu bildirim, site ayarları (bakım modu vb.), işlem kayıtları
-- **İçerik:** açılış sayfası, SSS, hakkımızda, iletişim, hesaplama yöntemi, kullanım koşulları, gizlilik, KVKK, sorumlu oyun
-
-Gerekli ortam değişkenleri için `.env.example` dosyasına bakın. Tablolar ilk istekte otomatik oluşturulur ve
-`ADMIN_EMAIL` / `ADMIN_PASSWORD` ile ilk yönetici hesabı açılır.
-
-## Uyarı
-
-Tahminler gerçek istatistiklerden hesaplanan matematiksel olasılıklardır; **garanti sonuç değildir**.
+Gösterge paneli (hacim, kasa sonucu, dağıtılan bonus, dolaşımdaki kredi), oyun istatistikleri ve gerçekleşen RTP, tüm eller, Crash turları ve dağılımı, kredi işlem defteri, kullanıcılar (kredi düzeltmesi, yaş doğrulaması sıfırlama, askı, rol), promosyon kodları, oyun ve ekonomi ayarları, destek talepleri, canlı destek, reklamlar, blog, sayfalar, SSS, duyurular, toplu bildirim, bülten, güvenlik, CSV dışa aktarma, işlem kayıtları, sistem durumu.

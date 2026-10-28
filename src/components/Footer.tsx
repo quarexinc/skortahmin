@@ -8,22 +8,24 @@ import { getSettings } from '@/lib/settings';
 
 const COLS = [
   {
-    title: 'Platform',
+    title: 'Oyunlar',
     links: [
-      { href: '/maclar', label: 'Maç programı' },
+      { href: '/oyunlar/crash', label: 'Crash' },
+      { href: '/oyunlar/mines', label: 'Mines' },
+      { href: '/oyunlar/slots', label: 'Slots' },
+      { href: '/oyunlar/blackjack', label: 'Blackjack' },
       { href: '/liderlik', label: 'Liderlik tablosu' },
-      { href: '/kupon', label: 'Kupon oluşturucu' },
-      { href: '/blog', label: 'Blog' },
-      { href: '/premium', label: 'Premium üyelik' },
+      { href: '/vip', label: 'VIP kulübü' },
     ],
   },
   {
     title: 'Destek',
     links: [
       { href: '/sss', label: 'Sıkça sorulan sorular' },
+      { href: '/adil-oyun', label: 'Adil oyun & doğrulama' },
       { href: '/destek', label: 'Destek talepleri' },
       { href: '/iletisim', label: 'İletişim' },
-      { href: '/nasil-calisir', label: 'Tahminler nasıl hesaplanır?' },
+      { href: '/blog', label: 'Blog' },
     ],
   },
   {
@@ -56,11 +58,11 @@ export default async function Footer() {
               <Logo size={30} />
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-slate-400">
-              Gerçek maç verileri ve Poisson modeliyle şeffaf futbol analizi. Tüm sayılar API-Football&apos;dan çalışma anında gelir.
+              Sanal kredilerle oynanan sosyal casino. Doğrulanabilir adil sonuçlar, günlük bonuslar ve VIP seviyeleri. Gerçek para yatırılmaz, kazanılmaz, çekilmez.
             </p>
             {s.newsletterEnabled && dbConfigured() && (
               <div className="mt-5">
-                <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><Mail size={15} /> Haftalık bülten</p>
+                <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><Mail size={15} /> Etkinlik bülteni</p>
                 <NewsletterForm compact />
               </div>
             )}
@@ -82,9 +84,12 @@ export default async function Footer() {
         </div>
         <div className="border-t border-white/5">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-[11px] text-slate-500">
-            <span>© {new Date().getFullYear()} Skor Çıkartıcı · Veri kaynağı: API-Football v3</span>
+            <span className="flex items-center gap-2">
+              <span className="grid h-6 w-6 place-items-center rounded-full border border-red-400/50 text-[9px] font-black text-red-300">18+</span>
+              © {new Date().getFullYear()} BloxyBet
+            </span>
             <span>
-              18+ · Tahminler matematiksel olasılıklardır; garanti sonuç değildir.{' '}
+              Krediler sanaldır; para, ürün veya herhangi bir değerle alınıp satılamaz ve dışarı çekilemez.{' '}
               <Link href="/sorumlu-oyun" className="underline hover:text-slate-300">Sorumlu oyun</Link>
             </span>
           </div>

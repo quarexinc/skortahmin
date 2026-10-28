@@ -7,39 +7,39 @@ export const metadata: Metadata = { title: 'Kullanım koşulları' };
 export default function Page() {
   return (
     <Prose title="Kullanım koşulları" updated="28 Ekim 2026">
-      <p>Skor Çıkartıcı&apos;yı (“Platform”) kullanarak aşağıdaki koşulları kabul etmiş olursunuz.</p>
+      <p>BloxyBet&apos;i (“Platform”) kullanarak aşağıdaki koşulları kabul etmiş olursun.</p>
       <h2>1. Hizmetin niteliği</h2>
       <p>
-        Platform, futbol maçlarına ilişkin istatistiksel analiz ve olasılık hesapları sunan bir bilgi ve eğlence hizmetidir.
-        Platformda bahis oynatılmaz; sunulan bilgiler yatırım veya bahis tavsiyesi değildir.
+        Platform, casino tarzı oyunların yalnızca <strong>sanal kredilerle</strong> oynandığı bir sosyal eğlence hizmetidir.
+        Platformda gerçek parayla bahis oynanmaz; para, kripto para, oyun içi eşya veya başka herhangi bir değer yatırılamaz, kazanılamaz ve çekilemez.
       </p>
-      <h2>2. Üyelik</h2>
+      <h2>2. Sanal krediler</h2>
       <ul>
-        <li>Üye olmak için 18 yaşını doldurmuş olmanız gerekir.</li>
-        <li>Hesap bilgilerinizin doğruluğundan ve şifrenizin gizliliğinden siz sorumlusunuz.</li>
-        <li>Bir kişi yalnızca bir hesap açabilir; yarışmada haksız avantaj için çoklu hesap kullanmak yasaktır.</li>
+        <li>Krediler yalnızca Platform içinde, eğlence amacıyla kullanılan sanal birimlerdir ve hiçbir parasal değeri yoktur.</li>
+        <li>Krediler satın alınamaz, satılamaz, başka bir hesaba aktarılamaz, takas edilemez ve paraya veya herhangi bir ürüne, hizmete ya da değere dönüştürülemez.</li>
+        <li>Kredilerin Platform dışında alınıp satılması veya ödül karşılığı devredilmesi yasaktır; tespit edilmesi hâlinde ilgili hesaplar kapatılır.</li>
+        <li>Platform, oyun dengesi veya kötüye kullanım nedeniyle kredi bakiyelerini düzeltme hakkını saklı tutar. Hesap kapandığında krediler herhangi bir karşılık olmaksızın silinir.</li>
       </ul>
-      <h2>3. Kullanıcı içerikleri</h2>
+      <h2>3. Yaş sınırı ve üyelik</h2>
+      <ul>
+        <li>Platform yalnızca <strong>18 yaşını doldurmuş</strong> kişiler içindir. Kayıt sırasında doğum tarihini doğru beyan etmekle yükümlüsün.</li>
+        <li>Hesap bilgilerinin doğruluğundan ve şifrenin gizliliğinden sen sorumlusun.</li>
+        <li>Bir kişi yalnızca bir hesap açabilir. Bonusları çoğaltmak için çoklu hesap kullanmak yasaktır.</li>
+      </ul>
+      <h2>4. Oyunlar ve adil oyun</h2>
       <p>
-        Yorum ve mesajlarınızda hakaret, nefret söylemi, spam, reklam, kişisel veri paylaşımı ve yasa dışı içerik yasaktır.
-        Bu kurallara aykırı içerikler kaldırılabilir, hesaplar uyarı yapılmaksızın askıya alınabilir.
+        Oyun sonuçları <Link href="/adil-oyun">Adil oyun</Link> sayfasında açıklanan doğrulanabilir yöntemle üretilir. Teknik bir arıza veya
+        açık hata durumunda ilgili el iptal edilerek bahis iade edilebilir. Otomatik araçlarla (bot, betik) oynamak yasaktır.
       </p>
-      <h2>4. Premium üyelik</h2>
-      <p>
-        Premium özellikler ödeme onayından sonra yönetici tarafından belirtilen süre için aktifleştirilir. İade ve iptal talepleri
-        destek kanalları üzerinden değerlendirilir.
-      </p>
-      <h2>5. Sorumluluğun sınırlandırılması</h2>
-      <p>
-        Veriler üçüncü taraf bir sağlayıcıdan (API-Football) alınır; gecikme, eksiklik veya hata olabilir. Tahminlere dayanarak
-        alınan kararlardan doğan zararlardan Platform sorumlu tutulamaz.
-      </p>
-      <h2>6. Değişiklikler</h2>
-      <p>Bu koşullar güncellenebilir; güncel sürüm her zaman bu sayfada yayımlanır.</p>
-      <p>
-        Kişisel verilerinizin işlenmesi için <Link href="/kvkk">KVKK aydınlatma metnine</Link> ve{' '}
-        <Link href="/gizlilik">gizlilik politikasına</Link> bakın.
-      </p>
+      <h2>5. Davranış kuralları</h2>
+      <ul>
+        <li>Canlı destek, destek talepleri ve profil alanlarında hakaret, taciz ve yasa dışı içerik paylaşmak yasaktır.</li>
+        <li>Platformun güvenliğini veya işleyişini bozmaya yönelik girişimler hesap kapatma ve yasal işlem sebebidir.</li>
+      </ul>
+      <h2>6. Sorumluluğun sınırlandırılması</h2>
+      <p>Platform “olduğu gibi” sunulur. Kesintisiz veya hatasız çalışacağı garanti edilmez. Sanal kredilerin kaybından doğan herhangi bir talep kabul edilmez.</p>
+      <h2>7. Değişiklikler</h2>
+      <p>Bu koşullar güncellenebilir. Önemli değişiklikler site içinde duyurulur. Sorular için <Link href="/iletisim">iletişim</Link> sayfasını kullanabilirsin.</p>
     </Prose>
   );
 }

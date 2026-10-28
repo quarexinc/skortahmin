@@ -60,59 +60,6 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS login_attempts_email_idx ON login_attempts (email, created_at);
-CREATE TABLE IF NOT EXISTS favorites (
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL,
-  ref_id INT NOT NULL,
-  label TEXT NOT NULL,
-  logo TEXT,
-  extra JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (user_id, kind, ref_id)
-);
-CREATE TABLE IF NOT EXISTS predictions (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  fixture_id INT NOT NULL,
-  home_goals INT NOT NULL,
-  away_goals INT NOT NULL,
-  fixture_date TIMESTAMPTZ NOT NULL,
-  home_name TEXT NOT NULL,
-  away_name TEXT NOT NULL,
-  league_name TEXT,
-  status TEXT NOT NULL DEFAULT 'pending',
-  actual_home INT,
-  actual_away INT,
-  points INT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (user_id, fixture_id)
-);
-CREATE INDEX IF NOT EXISTS predictions_pending_idx ON predictions (status, fixture_date);
-CREATE TABLE IF NOT EXISTS coupons (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  picks JSONB NOT NULL,
-  total_prob DOUBLE PRECISION NOT NULL,
-  is_public BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE TABLE IF NOT EXISTS comments (
-  id SERIAL PRIMARY KEY,
-  fixture_id INT NOT NULL,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  body TEXT NOT NULL,
-  hidden BOOLEAN NOT NULL DEFAULT FALSE,
-  reports INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS comments_fixture_idx ON comments (fixture_id, created_at);
-CREATE TABLE IF NOT EXISTS comment_reports (
-  comment_id INT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  PRIMARY KEY (comment_id, user_id)
-);
 CREATE TABLE IF NOT EXISTS tickets (
   id SERIAL PRIMARY KEY,
   user_id INT REFERENCES users(id) ON DELETE SET NULL,
@@ -167,17 +114,6 @@ CREATE TABLE IF NOT EXISTS announcements (
   level TEXT NOT NULL DEFAULT 'info',
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_by INT REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE TABLE IF NOT EXISTS premium_requests (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  months INT NOT NULL DEFAULT 1,
-  note TEXT,
-  status TEXT NOT NULL DEFAULT 'pending',
-  admin_note TEXT,
-  decided_by INT REFERENCES users(id) ON DELETE SET NULL,
-  decided_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS settings (
