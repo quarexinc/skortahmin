@@ -6,7 +6,7 @@ import LiveFeed from '@/components/games/LiveFeed';
 import { getSettings } from '@/lib/settings';
 
 export const metadata: Metadata = { title: 'Oyunlar' };
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default async function Lobby() {
   const s = await getSettings();
@@ -16,7 +16,7 @@ export default async function Lobby() {
       <p className="mt-1 text-slate-400">Tüm oyunlar sunucu tarafında, doğrulanabilir adil sonuçlarla oynanır. Krediler sanaldır.</p>
       <AdSlot placement="matches_top" className="mt-6" />
       <div className="mt-6">
-        <GameCards enabled={{ mines: s.minesEnabled, crash: s.crashEnabled, slots: s.slotsEnabled, blackjack: s.blackjackEnabled }} />
+        <GameCards disabled={s.disabledGames} edges={s.edges} filters />
       </div>
       <div className="mt-8">
         <LiveFeed />

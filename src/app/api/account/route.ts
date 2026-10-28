@@ -3,6 +3,7 @@ import { clearSession, HttpError, requireUser, toSessionUser } from '@/lib/auth'
 import { audit, q, q1 } from '@/lib/db';
 import { body, route, str } from '@/lib/http';
 import { userBadges } from '@/lib/userStats';
+import { isGame } from '@/lib/games/registry';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export const PATCH = route(async (req) => {
   const u = await requireUser();
   const b = await body(req);
   const name = str(b.name, 'Ad soyad', { min: 2, max: 60 });
-  const favoriteGame = ['mines', 'crash', 'slots', 'blackjack'].includes(b.favoriteGame) ? b.favoriteGame : null;
+  const favoriteGame = isGame(b.favoriteGame) ? b.favoriteGame : null;
   const bio = str(b.bio, 'Hakkımda', { max: 280, optional: true }) || null;
   const color = COLORS.includes(b.avatarColor) ? b.avatarColor : u.avatarColor;
   const row = await q1(

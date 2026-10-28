@@ -5,7 +5,7 @@ import { dbConfigured, q } from '@/lib/db';
 import { DEFAULT_FAQS } from '@/lib/faqs';
 
 export const metadata: Metadata = { title: 'Sıkça sorulan sorular' };
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface F { category: string; question: string; answer: string }
 

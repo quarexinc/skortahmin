@@ -1,4 +1,5 @@
 // Hızlı arama: oyunlar, sayfalar, üyeler, blog yazıları
+import { GAME_INFO, GAME_KEYS } from '@/lib/games/registry';
 import { NextResponse } from 'next/server';
 import { dbConfigured, q } from '@/lib/db';
 
@@ -7,10 +8,7 @@ export const dynamic = 'force-dynamic';
 const norm = (s: string) => s.toLocaleLowerCase('tr-TR');
 
 const STATIC = [
-  { type: 'game', title: 'Crash', sub: 'Roket yükselirken çık', href: '/oyunlar/crash' },
-  { type: 'game', title: 'Mines', sub: 'Mayınlardan kaçın', href: '/oyunlar/mines' },
-  { type: 'game', title: 'Slots', sub: '5 makara, 10 çizgi', href: '/oyunlar/slots' },
-  { type: 'game', title: 'Blackjack', sub: '21’e en yakın el', href: '/oyunlar/blackjack' },
+  ...GAME_KEYS.map((k) => ({ type: 'game', title: GAME_INFO[k].name, sub: GAME_INFO[k].desc, href: `/oyunlar/${k}` })),
   { type: 'page', title: 'Cüzdan', sub: 'Bakiye, kasa, bonuslar', href: '/cuzdan' },
   { type: 'page', title: 'VIP', sub: 'Seviyeler ve ödüller', href: '/vip' },
   { type: 'page', title: 'Adil oyun', sub: 'Tohumlar ve doğrulama', href: '/adil-oyun' },

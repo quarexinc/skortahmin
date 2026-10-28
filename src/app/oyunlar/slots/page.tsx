@@ -1,35 +1,27 @@
 'use client';
 
-import { Bell, Cherry, Citrus, Clover, Crown, Diamond, Gem, Grape, Play, Repeat, Sparkles, Star, StopCircle, type LucideIcon } from 'lucide-react';
+import { Play, Repeat, StopCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import BetInput from '@/components/games/BetInput';
 import GameShell, { FairBox } from '@/components/games/GameShell';
+import { SymbolIcon } from '@/components/icons/GameIcons';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/client';
-import { PAYLINES, PAYTABLE, SCATTER_PAY, SYMBOLS, type Sym } from '@/lib/games/slots';
+import { PAYLINES, PAYTABLE, SCATTER_PAY, slotScale, SYMBOLS, type Sym } from '@/lib/games/slots';
 import { fmtCredits, fmtMult } from '@/lib/money';
 
-const ICONS: Record<Sym, { icon: LucideIcon; color: string; label: string }> = {
-  cherry: { icon: Cherry, color: '#f43f5e', label: 'Kiraz' },
-  lemon: { icon: Citrus, color: '#facc15', label: 'Limon' },
-  grape: { icon: Grape, color: '#a855f7', label: 'Üzüm' },
-  bell: { icon: Bell, color: '#f59e0b', label: 'Çan' },
-  clover: { icon: Clover, color: '#22c55e', label: 'Yonca' },
-  star: { icon: Star, color: '#fde047', label: 'Yıldız' },
-  gem: { icon: Gem, color: '#22d3ee', label: 'Mücevher' },
-  crown: { icon: Crown, color: '#fbbf24', label: 'Taç' },
-  wild: { icon: Sparkles, color: '#f472b6', label: 'Joker' },
-  scatter: { icon: Diamond, color: '#60a5fa', label: 'Dağınık' },
-};
+const LABEL: Record<Sym, string> = { cherry: 'Kiraz', lemon: 'Limon', grape: 'Üzüm', bell: 'Çan', clover: 'Yonca', star: 'Yıldız', gem: 'Mücevher', crown: 'Taç', wild: 'Joker', scatter: 'Dağınık' };
 
 interface Line { line: number; symbol: Sym; count: number; mult: number }
 interface Res { grid: Sym[][]; lines: Line[]; scatter: number; scatterMult: number; multiplier: number; payout: number; balance: number; fair: { serverHash: string; clientSeed: string; nonce: number } }
 
+const fmt = (n: number) => n.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
 const randomGrid = (): Sym[][] => Array.from({ length: 5 }, () => Array.from({ length: 3 }, () => SYMBOLS[Math.floor(Math.random() * 8)]));
 
 export default function Slots() {
-  const { setBalance, toast } = useAuth();
+  const { setBalance, toast, site } = useAuth();
+  const scale = slotScale((site.edges.slots ?? 3.9) / 100);
   const [amount, setAmount] = useState('10');
   // sunucu ve istemci aynı başlangıç ızgarasını çizsin (hydration), rastgele ızgara yüklenince gelir
   const [grid, setGrid] = useState<Sym[][]>(() => Array.from({ length: 5 }, (_, r) => Array.from({ length: 3 }, (_, i) => SYMBOLS[(r * 3 + i) % 8])));
@@ -110,19 +102,18 @@ export default function Slots() {
       {showPay && (
         <div className="space-y-1.5 text-xs">
           {(Object.keys(PAYTABLE) as (keyof typeof PAYTABLE)[]).reverse().map((k) => {
-            const I = ICONS[k];
             return (
               <div key={k} className="flex items-center gap-2">
-                <I.icon size={16} style={{ color: I.color }} />
-                <span className="flex-1 text-slate-400">{I.label}</span>
-                <span className="tabular-nums text-slate-300">{PAYTABLE[k].map((m) => `${m / 10}x`).join(' · ')}</span>
+                <SymbolIcon id={k} size={20} />
+                <span className="flex-1 text-slate-400">{LABEL[k]}</span>
+                <span className="tabular-nums text-slate-300">{PAYTABLE[k].map((m) => `${fmt((m / 10) * scale)}x`).join(' · ')}</span>
               </div>
             );
           })}
           <div className="flex items-center gap-2 border-t border-white/5 pt-1.5">
-            <Diamond size={16} style={{ color: ICONS.scatter.color }} />
+            <SymbolIcon id="scatter" size={20} />
             <span className="flex-1 text-slate-400">Dağınık (her yerde)</span>
-            <span className="tabular-nums text-slate-300">{SCATTER_PAY.map((m) => `${m}x`).join(' · ')}</span>
+            <span className="tabular-nums text-slate-300">{SCATTER_PAY.map((m) => `${fmt(m * scale)}x`).join(' · ')}</span>
           </div>
           <p className="text-slate-500">3 · 4 · 5 eşleşme, toplam bahse göre. Joker dağınık hariç tüm sembollerin yerine geçer.</p>
         </div>
@@ -137,14 +128,13 @@ export default function Slots() {
         {grid.map((col, reel) => (
           <div key={reel} className={`grid gap-2 ${spinning[reel] ? 'blur-[1.5px]' : ''}`}>
             {col.map((s, row) => {
-              const I = ICONS[s];
               const win = winCells.has(`${reel}-${row}`) || (s === 'scatter' && (res?.scatter ?? 0) >= 3);
               return (
                 <div
                   key={row}
                   className={`grid aspect-square place-items-center rounded-xl bg-ink-800 transition ${win ? 'animate-pop ring-2 ring-amber-300 shadow-[0_0_24px_rgba(252,211,77,.35)]' : ''}`}
                 >
-                  <I.icon className="h-[55%] w-[55%]" style={{ color: I.color }} strokeWidth={2.2} />
+                  <SymbolIcon id={s} size={56} className="h-[68%] w-[68%]" />
                 </div>
               );
             })}

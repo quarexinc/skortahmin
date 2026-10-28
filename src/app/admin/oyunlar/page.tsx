@@ -5,14 +5,15 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Button, Card, Empty, Input, PageHeader, Select, Spinner } from '@/components/ui';
 import { api, fmtDateTime, timeAgo } from '@/lib/client';
+import { GAME_KEYS, GAME_INFO } from '@/lib/games/registry';
 import { fmtCredits, fmtMult } from '@/lib/money';
+import OddsPanel, { type Odds } from './OddsPanel';
 
 interface Stat { game: string; bets: number; players: number; wagered: string; paid: string; wins: number; best: number; avg_bet: string }
 interface Item { id: number; game: string; amount: string; payout: string; multiplier: string; created_at: string; user_id: number; name: string; server_hash: string | null; client_seed: string | null; nonce: number | null }
 interface D { stats: Stat[]; items: Item[]; more: boolean; top: { id: number; name: string; bets: number; wagered: string; profit: string }[]; sessions: { id: number; game: string; amount: string; created_at: string; user_id: number; name: string }[] }
 
-const NAMES: Record<string, string> = { mines: 'Mines', crash: 'Crash', slots: 'Slots', blackjack: 'Blackjack' };
-const TARGET: Record<string, string> = { mines: '%99', crash: '%99', slots: '~%96', blackjack: '~%99,5' };
+const NAMES: Record<string, string> = Object.fromEntries(Object.entries(GAME_INFO).map(([k, v]) => [k, v.name]));
 
 export default function AdminGames() {
   const [period, setPeriod] = useState('week');
@@ -21,6 +22,10 @@ export default function AdminGames() {
   const [big, setBig] = useState(false);
   const [page, setPage] = useState(0);
   const [d, setD] = useState<D | null>(null);
+  const [odds, setOdds] = useState<Odds | null>(null);
+  useEffect(() => {
+    api<Odds>('/api/admin/odds').then((r) => setOdds(r.data));
+  }, []);
 
   useEffect(() => {
     setD(null);
@@ -37,7 +42,8 @@ export default function AdminGames() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Oyunlar & eller" subtitle="Oyun başına hacim, geri dönüş oranı (RTP) ve tüm eller" />
+      <PageHeader title="Oyunlar & şanslar" subtitle="Oyun başına şans (kasa payı) ayarı, hacim, geri dönüş oranı (RTP) ve tüm eller" />
+      {odds && <OddsPanel odds={odds} onChange={setOdds} />}
       <div className="flex flex-wrap gap-2">
         {[['day', 'Bugün'], ['week', '7 gün'], ['month', '30 gün'], ['all', 'Tümü']].map(([k, l]) => (
           <button key={k} onClick={() => { setPeriod(k); setPage(0); }} className={`chip ${period === k ? 'chip-active' : ''}`}>{l}</button>
@@ -47,14 +53,14 @@ export default function AdminGames() {
         <Spinner />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {['crash', 'mines', 'slots', 'blackjack'].map((g) => {
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+            {GAME_KEYS.map((g) => {
               const s = d.stats.find((x) => x.game === g);
               const w = Number(s?.wagered ?? 0);
               const p = Number(s?.paid ?? 0);
               return (
                 <Card key={g} className="p-4">
-                  <p className="flex items-center justify-between font-bold">{NAMES[g]} <span className="text-[11px] font-normal text-slate-500">hedef RTP {TARGET[g]}</span></p>
+                  <p className="flex items-center justify-between font-bold">{NAMES[g]} <span className="text-[11px] font-normal text-slate-500">hedef RTP {odds ? (g === 'blackjack' ? `~%${(100 - GAME_INFO.blackjack.edge - (odds.blackjackPayout < 1.5 ? (1.5 - odds.blackjackPayout) * 2.3 : 0)).toFixed(1).replace('.', ',')}` : `%${(100 - (odds.games.find((x) => x.key === g)?.edge ?? 0)).toFixed(2).replace('.', ',')}`) : '…'}</span></p>
                   <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-xs">
                     <span className="text-slate-500">El / oyuncu</span><span className="text-right tabular-nums">{s?.bets ?? 0} / {s?.players ?? 0}</span>
                     <span className="text-slate-500">Oynanan</span><span className="text-right tabular-nums">{cr(w)}</span>

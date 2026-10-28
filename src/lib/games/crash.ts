@@ -5,6 +5,8 @@ import 'server-only';
 import { createHmac, randomBytes } from 'crypto';
 import { cq, cq1, type PoolClient } from '@/lib/db';
 import { sha256 } from '@/lib/fair';
+import { edgeFraction } from '@/lib/games/registry';
+import { getSettings } from '@/lib/settings';
 import { ledger, settle } from '@/lib/wallet';
 
 export const BETTING_MS = 7000;
@@ -15,11 +17,11 @@ export const MAX_CRASH = 1000;
 export const multiplierAt = (ms: number) => Math.max(1, Math.floor(Math.exp(GROWTH * Math.max(0, ms)) * 100) / 100);
 export const msForMultiplier = (m: number) => Math.log(m) / GROWTH;
 
-/** Tohumdan çökme noktası: ~%1 anında 1,00x, beklenen ev avantajı %1. */
-export function crashPointFromSeed(seed: string): number {
+/** Tohumdan çökme noktası; kasa payı edge (kesir) tur oluşturulurken sabitlenir ve turla birlikte saklanır. */
+export function crashPointFromSeed(seed: string, edge = 0.01): number {
   const h = createHmac('sha256', seed).update('crash').digest('hex');
   const r = parseInt(h.slice(0, 13), 16) / 2 ** 52;
-  const cp = Math.floor(99 / (1 - r)) / 100;
+  const cp = Math.floor((100 * (1 - edge)) / (1 - r)) / 100;
   return Math.min(MAX_CRASH, Math.max(1, cp));
 }
 
@@ -31,6 +33,7 @@ export interface Round {
   starts_at: Date;
   crashed_at: Date | null;
   settled: boolean;
+  edge: string | number;
 }
 
 async function settleRound(c: PoolClient, r: Round) {
@@ -70,8 +73,9 @@ export async function ensureRound(c: PoolClient): Promise<Round> {
   }
   if (!r || (r.crashed_at && now >= new Date(r.crashed_at).getTime() + POST_MS)) {
     const seed = randomBytes(32).toString('hex');
-    r = await cq1<Round>(c, 'INSERT INTO crash_rounds (crash_point, seed, hash, starts_at) VALUES ($1, $2, $3, $4) RETURNING *',
-      [crashPointFromSeed(seed), seed, sha256(seed), new Date(now + BETTING_MS)],
+    const edge = edgeFraction((await getSettings(c)).edges, 'crash');
+    r = await cq1<Round>(c, 'INSERT INTO crash_rounds (crash_point, seed, hash, starts_at, edge) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [crashPointFromSeed(seed, edge), seed, sha256(seed), new Date(now + BETTING_MS), edge],
     );
   }
   return r!;

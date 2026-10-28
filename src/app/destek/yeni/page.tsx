@@ -9,12 +9,13 @@ import { Button, Card, Field, Input, LinkButton, Notice, PageHeader, Select, Tex
 import { api } from '@/lib/client';
 
 export default function NewTicket() {
-  const { user, toast } = useAuth();
+  const { user, toast, ready } = useAuth();
   const router = useRouter();
   const [f, setF] = useState({ subject: '', category: 'genel', priority: 'normal', message: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  if (!ready) return <main className="mx-auto max-w-xl px-4 py-12" />;
   if (!user)
     return (
       <main className="mx-auto max-w-xl px-4 py-12 text-center">

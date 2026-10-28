@@ -1,8 +1,9 @@
 'use client';
 
-import { Bomb, Dices, Gem, HandCoins, Play } from 'lucide-react';
+import { Dices, HandCoins, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { GameIcon, SymbolIcon } from '@/components/icons/GameIcons';
 import BetInput from '@/components/games/BetInput';
 import GameShell, { FairBox } from '@/components/games/GameShell';
 import { Button, Select } from '@/components/ui';
@@ -124,7 +125,7 @@ export default function Mines() {
               } ${pop === i ? 'scale-95' : ''}`}
               aria-label={`Kare ${i + 1}`}
             >
-              {(open || after) && (isMine ? <Bomb size={26} className={hit ? 'text-white' : 'text-red-400'} /> : (open || after) && shown ? <Gem size={24} className={open ? 'text-accent-soft' : 'text-slate-500'} /> : open ? <Gem size={24} className="text-accent-soft" /> : null)}
+              {(open || after) && (isMine ? <span className={hit ? 'animate-pop' : 'opacity-80'}><GameIcon game="mines" size={34} /></span> : (open || after) && shown ? <span className={open ? '' : 'opacity-40'}><SymbolIcon id="gem" size={30} /></span> : open ? <SymbolIcon id="gem" size={30} /> : null)}
             </button>
           );
         })}

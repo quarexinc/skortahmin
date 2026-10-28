@@ -307,6 +307,9 @@ CREATE TABLE IF NOT EXISTS crash_rounds (
   settled BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+ALTER TABLE crash_rounds ADD COLUMN IF NOT EXISTS edge NUMERIC(6,4) NOT NULL DEFAULT 0.01;
+CREATE INDEX IF NOT EXISTS bets_user_game_idx ON bets (user_id, game, id DESC);
+CREATE INDEX IF NOT EXISTS bets_created_idx ON bets (created_at DESC);
 CREATE TABLE IF NOT EXISTS crash_bets (
   id BIGSERIAL PRIMARY KEY,
   round_id BIGINT NOT NULL REFERENCES crash_rounds(id) ON DELETE CASCADE,
@@ -321,14 +324,23 @@ CREATE TABLE IF NOT EXISTS crash_bets (
 );
 `;
 
+// Şema sürümü: yalnızca değiştiğinde tüm CREATE/ALTER komutları çalışır. Soğuk başlangıçta tek bir hafif sorgu yeter.
+const SCHEMA_VERSION = '2026-10-28-games2';
+
 async function ensureSchema(): Promise<void> {
   if (!globalThis.__skorSchema) {
     globalThis.__skorSchema = (async () => {
       const c = await pool().connect();
       try {
+        const ok = await c
+          .query(`SELECT 1 FROM settings WHERE key = '__schema_version' AND value = $1::jsonb`, [JSON.stringify(SCHEMA_VERSION)])
+          .then((r) => (r.rowCount ?? 0) > 0)
+          .catch(() => false);
+        if (ok) return;
         await c.query(SCHEMA);
         await migrateToBloxy(c);
         await seedAdmin(c);
+        await c.query(`INSERT INTO settings (key, value) VALUES ('__schema_version', $1::jsonb) ON CONFLICT (key) DO UPDATE SET value = $1::jsonb`, [JSON.stringify(SCHEMA_VERSION)]);
       } finally {
         c.release();
       }

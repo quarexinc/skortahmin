@@ -1,6 +1,7 @@
 'use client';
 
 // Ctrl/Cmd+K ile açılan hızlı arama: oyunlar, sayfalar, üyeler, blog yazıları.
+import { GAME_INFO, GAME_KEYS } from '@/lib/games/registry';
 import { ArrowDown, ArrowRight, ArrowUp, CornerDownLeft, Gamepad2, FileText, Search, UserRound, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -15,10 +16,7 @@ interface Hit {
 
 const PAGES: Hit[] = [
   ['Oyun lobisi', '/oyunlar'],
-  ['Crash', '/oyunlar/crash'],
-  ['Mines', '/oyunlar/mines'],
-  ['Slots', '/oyunlar/slots'],
-  ['Blackjack', '/oyunlar/blackjack'],
+  ...GAME_KEYS.map((k) => [GAME_INFO[k].name, `/oyunlar/${k}`] as [string, string]),
   ['Cüzdan', '/cuzdan'],
   ['VIP kulübü', '/vip'],
   ['Adil oyun', '/adil-oyun'],

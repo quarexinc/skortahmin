@@ -22,8 +22,18 @@ export interface ClientUser {
   selfExcludedUntil: string | null;
 }
 
+/** Herkese açık oyun ayarları (kasa payları dahil) — sunucu bileşeni olan layout'tan gelir. */
+export interface SiteInfo {
+  edges: Record<string, number>;
+  disabledGames: string[];
+  blackjackPayout: number;
+}
+
 interface Ctx {
   user: ClientUser | null;
+  /** ilk oturum sorgusu tamamlandı mı (statik sayfalarda kullanıcı istemcide yüklenir) */
+  ready: boolean;
+  site: SiteInfo;
   enabled: boolean;
   unread: { notifications: number; chat: number };
   refresh: () => Promise<void>;
@@ -48,15 +58,16 @@ interface Toast {
 }
 
 export default function AuthProvider({
-  initialUser,
   enabled,
+  site,
   children,
 }: {
-  initialUser: ClientUser | null;
   enabled: boolean;
+  site: SiteInfo;
   children: ReactNode;
 }) {
-  const [user, setUser] = useState<ClientUser | null>(initialUser);
+  const [user, setUser] = useState<ClientUser | null>(null);
+  const [ready, setReady] = useState(!enabled);
   const [unread, setUnread] = useState({ notifications: 0, chat: 0 });
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -64,6 +75,7 @@ export default function AuthProvider({
     const { data } = await api<{ user: ClientUser | null; unread?: { notifications: number; chat: number } }>(
       '/api/auth/me',
     );
+    setReady(true);
     if (!data) return;
     setUser(data.user);
     setUnread(data.unread ?? { notifications: 0, chat: 0 });
@@ -87,7 +99,7 @@ export default function AuthProvider({
   }, []);
 
   return (
-    <AuthCtx.Provider value={{ user, enabled, unread, refresh, setUser, toast, setBalance }}>
+    <AuthCtx.Provider value={{ user, ready, site, enabled, unread, refresh, setUser, toast, setBalance }}>
       {children}
       <div className="pointer-events-none fixed inset-x-0 top-16 z-[60] flex flex-col items-center gap-2 px-4">
         {toasts.map((t) => (

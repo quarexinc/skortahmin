@@ -5,9 +5,10 @@ import { vipFor } from '@/config/vip';
 import { ageFrom, HttpError } from '@/lib/auth';
 import { cq, cq1, type PoolClient } from '@/lib/db';
 import { toCredits, toUnits } from '@/lib/money';
-import { getSettings, type SiteSettings } from '@/lib/settings';
+import { GAME_INFO, type GameKey } from '@/lib/games/registry';
+import { gameEnabled, getSettings, type SiteSettings } from '@/lib/settings';
 
-export type GameKey = 'mines' | 'crash' | 'slots' | 'blackjack';
+export type { GameKey };
 
 export interface LockedUser {
   id: number;
@@ -67,14 +68,7 @@ export async function ledger(
   return balance;
 }
 
-const GAME_FLAG: Record<GameKey, keyof SiteSettings> = {
-  mines: 'minesEnabled',
-  crash: 'crashEnabled',
-  slots: 'slotsEnabled',
-  blackjack: 'blackjackEnabled',
-};
-
-export const GAME_NAMES: Record<GameKey, string> = { mines: 'Mines', crash: 'Crash', slots: 'Slots', blackjack: 'Blackjack' };
+export const GAME_NAMES: Record<GameKey, string> = Object.fromEntries(Object.entries(GAME_INFO).map(([k, v]) => [k, v.name])) as Record<GameKey, string>;
 
 /** Oynama koşulları: yaş, ban, mola, oyun açık mı, bahis sınırları, günlük limit. */
 export async function assertCanPlay(c: PoolClient, u: LockedUser, game: GameKey, amount: number): Promise<SiteSettings> {
@@ -83,7 +77,7 @@ export async function assertCanPlay(c: PoolClient, u: LockedUser, game: GameKey,
   if ((ageFrom(u.birth_date) ?? 0) < 18) throw new HttpError(403, 'Oyunlar yalnızca 18 yaş ve üzeri üyelere açıktır. Lütfen doğum tarihinizi doğrulayın.');
   if (u.self_excluded_until && new Date(u.self_excluded_until).getTime() > Date.now())
     throw new HttpError(403, `Kendi belirlediğin mola süresi devam ediyor (${new Date(u.self_excluded_until).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })} tarihine kadar).`);
-  if (!s[GAME_FLAG[game]]) throw new HttpError(403, `${GAME_NAMES[game]} şu anda bakımda.`);
+  if (!gameEnabled(s, game)) throw new HttpError(403, `${GAME_NAMES[game]} şu anda bakımda.`);
   if (!Number.isInteger(amount) || amount < toUnits(s.minBet)) throw new HttpError(400, `En düşük bahis ${s.minBet.toLocaleString('tr-TR')} kredi.`);
   if (amount > toUnits(s.maxBet)) throw new HttpError(400, `En yüksek bahis ${s.maxBet.toLocaleString('tr-TR')} kredi.`);
   if (amount > u.balance) throw new HttpError(400, 'Yetersiz bakiye.');

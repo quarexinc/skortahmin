@@ -1,4 +1,5 @@
 import { Mail } from 'lucide-react';
+import { GAME_INFO } from '@/lib/games/registry';
 import Link from 'next/link';
 import AdSlot from './AdSlot';
 import { Logo } from './Logo';
@@ -10,10 +11,8 @@ const COLS = [
   {
     title: 'Oyunlar',
     links: [
-      { href: '/oyunlar/crash', label: 'Crash' },
-      { href: '/oyunlar/mines', label: 'Mines' },
-      { href: '/oyunlar/slots', label: 'Slots' },
-      { href: '/oyunlar/blackjack', label: 'Blackjack' },
+      ...(['crash', 'mines', 'slots', 'blackjack', 'plinko', 'roulette'] as const).map((k) => ({ href: `/oyunlar/${k}`, label: GAME_INFO[k].name })),
+      { href: '/oyunlar', label: 'Tüm oyunlar' },
       { href: '/liderlik', label: 'Liderlik tablosu' },
       { href: '/vip', label: 'VIP kulübü' },
     ],

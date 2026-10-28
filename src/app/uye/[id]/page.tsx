@@ -7,11 +7,12 @@ import { vipFor } from '@/config/vip';
 import { dbConfigured, q, q1 } from '@/lib/db';
 import { fmtCredits, fmtMult } from '@/lib/money';
 import { userBadges } from '@/lib/userStats';
+import { GAME_META } from '@/components/games/meta';
 
 export const dynamic = 'force-dynamic';
 
 interface U { id: number; name: string; avatar_color: string; favorite_team: string | null; bio: string | null; created_at: Date; admin: boolean }
-const GAMES: Record<string, { n: string; i: typeof Bomb }> = { mines: { n: 'Mines', i: Bomb }, crash: { n: 'Crash', i: Rocket }, slots: { n: 'Slots', i: Cherry }, blackjack: { n: 'Blackjack', i: Spade } };
+const GAMES: Record<string, { n: string; i: (p: { size?: number; className?: string }) => JSX.Element }> = Object.fromEntries(Object.entries(GAME_META).map(([k, m]) => [k, { n: m.name, i: m.icon }]));
 
 async function load(id: number) {
   if (!dbConfigured() || !Number.isInteger(id)) return null;

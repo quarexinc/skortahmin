@@ -22,7 +22,7 @@ export function Logo({ size = 32 }: { size?: number }) {
   return (
     <span className="flex items-center gap-2">
       <LogoMark size={size} />
-      <span className="text-[16px] font-black tracking-tight">
+      <span className="text-[16px] font-black tracking-tight max-[430px]:hidden">
         Bloxy<span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Bet</span>
       </span>
     </span>

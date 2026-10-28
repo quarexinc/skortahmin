@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card, PageHeader, PRIORITY_TR, Spinner, STATUS_TR } from '@/components/ui';
 import { api, timeAgo } from '@/lib/client';
+import { GAME_INFO } from '@/lib/games/registry';
 import { fmtCredits, fmtMult } from '@/lib/money';
 
 interface D {
@@ -16,7 +17,7 @@ interface D {
   bigWins: { id: number; game: string; amount: string; payout: string; multiplier: string; created_at: string; user_id: number; name: string }[];
 }
 
-const NAMES: Record<string, string> = { mines: 'Mines', crash: 'Crash', slots: 'Slots', blackjack: 'Blackjack' };
+const NAMES: Record<string, string> = Object.fromEntries(Object.entries(GAME_INFO).map(([k, v]) => [k, v.name]));
 
 export default function Dashboard() {
   const [d, setD] = useState<D | null>(null);

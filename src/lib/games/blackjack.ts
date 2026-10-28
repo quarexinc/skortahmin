@@ -20,6 +20,8 @@ export interface BjState {
   hands: Hand[];
   active: number;
   phase: 'player' | 'done';
+  /** blackjack ödeme oranı (1,5 = 3:2); admin ayarından el dağıtılırken sabitlenir */
+  bjRatio?: number;
 }
 
 export const rank = (c: number) => c % 13; // 0=A, 1..8 = 2..9, 9=10, 10=J, 11=Q, 12=K
@@ -58,8 +60,8 @@ function draw(s: BjState): number {
   return s.shoe[s.pos++];
 }
 
-export function deal(values: number[], bet: number): BjState {
-  const s: BjState = { shoe: shuffle(values), pos: 0, dealer: [], hands: [], active: 0, phase: 'player' };
+export function deal(values: number[], bet: number, bjRatio = 1.5): BjState {
+  const s: BjState = { shoe: shuffle(values), pos: 0, dealer: [], hands: [], active: 0, phase: 'player', bjRatio };
   const p = [draw(s)];
   s.dealer.push(draw(s));
   p.push(draw(s));
@@ -141,7 +143,7 @@ function finish(s: BjState) {
       h.payout = 0;
     } else if (pbj && !dealerBj) {
       h.result = 'blackjack';
-      h.payout = Math.floor(h.bet * 2.5);
+      h.payout = Math.floor(h.bet * (1 + (s.bjRatio ?? 1.5)));
     } else if (dealerBj && !pbj) {
       h.result = 'lose';
       h.payout = 0;

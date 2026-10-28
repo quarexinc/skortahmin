@@ -11,6 +11,7 @@ import type { BadgeStats, EarnedBadge } from '@/config/badges';
 import { vipFor } from '@/config/vip';
 import { api, fmtDate, timeAgo } from '@/lib/client';
 import { fmtCredits, fmtMult, toCredits } from '@/lib/money';
+import { GAME_META } from '@/components/games/meta';
 
 interface Summary {
   stats: BadgeStats | null;
@@ -22,7 +23,7 @@ interface Summary {
   rakeback: number;
 }
 
-const GAME = { mines: { n: 'Mines', i: Bomb, c: 'text-rose-300' }, crash: { n: 'Crash', i: Rocket, c: 'text-pink-300' }, slots: { n: 'Slots', i: Cherry, c: 'text-amber-300' }, blackjack: { n: 'Blackjack', i: Spade, c: 'text-emerald-300' } } as Record<string, { n: string; i: typeof Bomb; c: string }>;
+const GAME = Object.fromEntries(Object.entries(GAME_META).map(([k, m]) => [k, { n: m.name, i: m.icon, c: '' , color: m.color }])) as Record<string, { n: string; i: (p: { size?: number; className?: string }) => JSX.Element; c: string; color: string }>;
 
 export default function AccountHome() {
   const { user } = useAuth();
@@ -140,7 +141,7 @@ export default function AccountHome() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { href: '/oyunlar', icon: Gamepad2, t: 'Oyna', d: 'Crash, Mines, Slots ve Blackjack.' },
+              { href: '/oyunlar', icon: Gamepad2, t: 'Oyna', d: '14 oyun, tek cüzdan.' },
               { href: '/destek', icon: LifeBuoy, t: 'Destek', d: d.openTickets ? `${d.openTickets} açık talebin var.` : 'Bir sorun mu var? Bize yaz.' },
               { href: '/hesap/sorumlu-oyun', icon: HeartHandshake, t: 'Sorumlu oyun', d: 'Mola, limit ve hatırlatıcılar.' },
             ].map((x) => (
