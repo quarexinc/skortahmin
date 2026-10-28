@@ -7,16 +7,18 @@ import LiveFeed from '@/components/games/LiveFeed';
 import CountUp from '@/components/landing/CountUp';
 import Reveal from '@/components/landing/Reveal';
 import RotatingWord from '@/components/landing/RotatingWord';
+import GuestOnly from '@/components/GuestOnly';
 import NewsletterForm from '@/components/NewsletterForm';
 import { Avatar, LinkButton } from '@/components/ui';
 import { VIP_LEVELS } from '@/config/vip';
-import { getUser } from '@/lib/auth';
 import { dbConfigured, q } from '@/lib/db';
+import { GAME_KEYS } from '@/lib/games/registry';
 import { DEFAULT_FAQS } from '@/lib/faqs';
 import { fmtCredits } from '@/lib/money';
 import { getSettings } from '@/lib/settings';
 
-export const dynamic = 'force-dynamic';
+// Statik üretilir, 30 sn'de bir yenilenir: ziyaretçiye CDN'den anında gelir.
+export const revalidate = 30;
 
 const PERKS = [
   { icon: Gift, title: 'Hoş geldin kredisi', text: 'Üye olduğun anda hesabına başlangıç kredisi eklenir.' },
@@ -37,13 +39,17 @@ async function load() {
   let faqs = DEFAULT_FAQS.slice(0, 5).map((f) => ({ question: f.q, answer: f.a }));
   if (dbConfigured()) {
     try {
-      const [s] = await q(`SELECT (SELECT COUNT(*)::int FROM users) AS users, (SELECT COUNT(*)::int FROM bets) AS bets, (SELECT COALESCE(SUM(amount),0)::bigint FROM bets) AS wagered`);
+      // üç sorgu paralel: sayfa gecikmesi tek sorgu kadar
+      const [[s], bigRows, db] = await Promise.all([
+        q(`SELECT (SELECT COUNT(*)::int FROM users) AS users, (SELECT COUNT(*)::int FROM bets) AS bets, (SELECT COALESCE(SUM(amount),0)::bigint FROM bets) AS wagered`),
+        q<Big>(
+          `SELECT b.id, b.game, b.payout, b.multiplier, u.name, u.avatar_color, u.id AS user_id FROM bets b JOIN users u ON u.id = b.user_id
+           WHERE NOT u.banned AND b.payout > b.amount ORDER BY b.multiplier DESC, b.id DESC LIMIT 6`,
+        ),
+        q<{ question: string; answer: string }>(`SELECT question, answer FROM faqs WHERE active ORDER BY sort, id LIMIT 5`),
+      ]);
       stats = { users: s.users, bets: s.bets, wagered: Number(s.wagered) };
-      big = await q<Big>(
-        `SELECT b.id, b.game, b.payout, b.multiplier, u.name, u.avatar_color, u.id AS user_id FROM bets b JOIN users u ON u.id = b.user_id
-         WHERE NOT u.banned AND b.payout > b.amount ORDER BY b.multiplier DESC, b.id DESC LIMIT 6`,
-      );
-      const db = await q<{ question: string; answer: string }>(`SELECT question, answer FROM faqs WHERE active ORDER BY sort, id LIMIT 5`);
+      big = bigRows;
       if (db.length) faqs = db;
     } catch {
       /* geçici veritabanı hatası: ilgili bölümler boş kalır */
@@ -53,7 +59,7 @@ async function load() {
 }
 
 export default async function Landing() {
-  const [{ stats, big, faqs }, user, s] = await Promise.all([load(), getUser(), getSettings()]);
+  const [{ stats, big, faqs }, s] = await Promise.all([load(), getSettings()]);
   const members = dbConfigured();
   const [pre, post] = s.heroTitle.includes('sanal kredilerle') ? s.heroTitle.split('sanal kredilerle') : [s.heroTitle, null];
 
@@ -95,16 +101,18 @@ export default async function Landing() {
                 <Link href="/oyunlar" className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 px-6 py-3 font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-110">
                   Oyunlara git <ArrowRight size={18} className="transition group-hover:translate-x-1" />
                 </Link>
-                {!user && members && (
-                  <LinkButton href="/kayit" size="lg" variant="secondary">
-                    <Gift size={18} /> {s.signupBonus.toLocaleString('tr-TR')} kredi ile başla
-                  </LinkButton>
+                {members && (
+                  <GuestOnly>
+                    <LinkButton href="/kayit" size="lg" variant="secondary">
+                      <Gift size={18} /> {s.signupBonus.toLocaleString('tr-TR')} kredi ile başla
+                    </LinkButton>
+                  </GuestOnly>
                 )}
               </div>
             </Reveal>
             <Reveal delay={320}>
               <dl className="mt-10 grid max-w-lg grid-cols-3 gap-4">
-                <div><dt className="text-3xl font-black"><CountUp to={4} /></dt><dd className="text-xs text-slate-400">oyun</dd></div>
+                <div><dt className="text-3xl font-black"><CountUp to={GAME_KEYS.length} /></dt><dd className="text-xs text-slate-400">oyun</dd></div>
                 <div><dt className="text-3xl font-black"><CountUp to={stats.bets} /></dt><dd className="text-xs text-slate-400">oynanan el</dd></div>
                 <div><dt className="text-3xl font-black"><CountUp to={stats.users} /></dt><dd className="text-xs text-slate-400">oyuncu</dd></div>
               </dl>
@@ -145,13 +153,13 @@ export default async function Landing() {
           <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="label-muted">Oyunlar</p>
-              <h2 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Dört oyun, tek cüzdan</h2>
+              <h2 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">14 oyun, tek cüzdan</h2>
             </div>
             <Link href="/oyunlar" className="inline-flex items-center gap-1 text-sm text-violet-300 hover:underline">Lobiye git <ArrowRight size={14} /></Link>
           </div>
         </Reveal>
         <Reveal delay={100}>
-          <GameCards enabled={{ mines: s.minesEnabled, crash: s.crashEnabled, slots: s.slotsEnabled, blackjack: s.blackjackEnabled }} />
+          <GameCards disabled={s.disabledGames} edges={s.edges} />
         </Reveal>
       </section>
 
@@ -272,7 +280,7 @@ export default async function Landing() {
               {s.newsletterEnabled && members && <div className="mx-auto mt-6 max-w-md"><NewsletterForm /></div>}
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Link href="/oyunlar" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 px-6 py-3 font-bold text-white">Oyna <ArrowRight size={18} /></Link>
-                {!user && members && <LinkButton href="/kayit" size="lg" variant="secondary">Üye ol</LinkButton>}
+                {members && <GuestOnly><LinkButton href="/kayit" size="lg" variant="secondary">Üye ol</LinkButton></GuestOnly>}
               </div>
               <p className="mt-6 text-xs text-slate-500">18+ · Krediler sanaldır ve paraya çevrilemez · Toplam oynanan: {fmtCredits(stats.wagered, { compact: true })} kredi</p>
             </div>

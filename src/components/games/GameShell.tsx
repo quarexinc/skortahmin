@@ -5,13 +5,13 @@ import { Coffee, LogIn, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { LinkButton } from '@/components/ui';
+import { LinkButton, Spinner } from '@/components/ui';
 import AgeVerify from './AgeVerify';
 import LiveFeed from './LiveFeed';
-import { GAME_META } from './meta';
+import { edgeLabel, GAME_META } from './meta';
 
 export default function GameShell({ game, controls, board, fair }: { game: keyof typeof GAME_META; controls: ReactNode; board: ReactNode; fair?: ReactNode }) {
-  const { user, enabled } = useAuth();
+  const { user, enabled, ready, site } = useAuth();
   const M = GAME_META[game];
   const head = (
     <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -20,12 +20,14 @@ export default function GameShell({ game, controls, board, fair }: { game: keyof
         <h1 className="text-2xl font-black tracking-tight">{M.name}</h1>
         <p className="text-sm text-slate-400">{M.desc}</p>
       </div>
-      <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400"><ShieldCheck size={14} className="text-accent-soft" /> Doğrulanabilir · {M.edge}</span>
+      <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400"><ShieldCheck size={14} className="text-accent-soft" /> Doğrulanabilir · {edgeLabel(site.edges, game, site.blackjackPayout)}</span>
     </div>
   );
 
   let gate: ReactNode = null;
   if (!enabled) gate = <p className="text-center text-slate-400">Oyunlar şu anda kullanılamıyor.</p>;
+  else if (!ready) gate = <div className="grid h-64 place-items-center"><Spinner /></div>;
+  else if (site.disabledGames.includes(game)) gate = <p className="text-center text-slate-400">{M.name} şu anda bakımda.</p>;
   else if (!user)
     gate = (
       <div className="card mx-auto max-w-md p-8 text-center">
@@ -55,7 +57,7 @@ export default function GameShell({ game, controls, board, fair }: { game: keyof
     <main className="mx-auto max-w-6xl px-4 py-8">
       {head}
       {gate ?? (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
           <div className="card h-fit space-y-4 p-5">{controls}</div>
           <div className="min-w-0">{board}</div>
         </div>

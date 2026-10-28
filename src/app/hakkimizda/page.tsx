@@ -9,7 +9,7 @@ export default function Page() {
     <Prose title="Hakkımızda" intro="BloxyBet, casino tarzı oyunları gerçek para riski olmadan, sanal kredilerle oynamak isteyen yetişkinler için kuruldu.">
       <h2>Ne yapıyoruz?</h2>
       <p>
-        Crash, Mines, Slots ve Blackjack oyunlarını tek bir sanal kredi cüzdanıyla sunuyoruz. Krediler üyelikte, günlük bonuslarla,
+        14 oyunu (Crash, Mines, Slots, Blackjack, Plinko, Rulet, Dice ve daha fazlası) tek bir sanal kredi cüzdanıyla sunuyoruz. Krediler üyelikte, günlük bonuslarla,
         rakeback ve VIP ödülleriyle kazanılır; hiçbir zaman satın alınmaz, satılmaz ya da paraya çevrilmez.
       </p>
       <h2>İlkelerimiz</h2>

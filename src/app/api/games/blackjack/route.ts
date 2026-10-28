@@ -3,6 +3,7 @@ import { cq, cq1, tx } from '@/lib/db';
 import { nextRoll } from '@/lib/fair';
 import { canDouble, canSplit, deal, double, hit, SHOE, split, stand, view, type BjState } from '@/lib/games/blackjack';
 import { body, route } from '@/lib/http';
+import { getSettings } from '@/lib/settings';
 import { lockUser, parseAmount, settle, takeBet } from '@/lib/wallet';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export const POST = route(async (req) => {
       const amount = parseAmount(b.amount);
       balance = await takeBet(c, lu, 'blackjack', amount);
       const roll = await nextRoll(c, u.id, SHOE);
-      const st = deal(roll.values, amount);
+      const st = deal(roll.values, amount, (await getSettings(c)).blackjackPayout);
       s = await cq1<Sess>(c, `INSERT INTO game_sessions (user_id, game, amount, state, server_hash, client_seed, nonce) VALUES ($1, 'blackjack', $2, $3, $4, $5, $6) RETURNING *`,
         [u.id, amount, JSON.stringify(st), roll.fair.serverHash, roll.fair.clientSeed, roll.fair.nonce],
       );

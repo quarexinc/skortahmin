@@ -17,13 +17,14 @@ export const GET = route(async () => {
        FROM crash_bets b JOIN users u ON u.id = b.user_id WHERE b.round_id = $1 ORDER BY b.amount DESC LIMIT 50`,
       [r.id],
     );
-    const history = await cq(c, `SELECT id, crash_point FROM crash_rounds WHERE crashed_at IS NOT NULL ORDER BY id DESC LIMIT 20`,
+    const history = await cq(c, `SELECT id, crash_point, edge FROM crash_rounds WHERE crashed_at IS NOT NULL ORDER BY id DESC LIMIT 20`,
     );
     return {
       now,
       round: {
         id: Number(r.id),
         hash: r.hash,
+        edge: Number(r.edge),
         startsAt: start,
         phase: now < start ? 'betting' : crashed ? 'crashed' : 'flying',
         crashPoint: crashed ? Number(r.crash_point) : null,
@@ -32,7 +33,7 @@ export const GET = route(async () => {
       },
       bets: bets.map((b) => ({ ...b, mine: me?.id === b.user_id })),
       myBet: me ? bets.find((b) => b.user_id === me.id) ?? null : null,
-      history: history.map((h) => ({ id: Number(h.id), crashPoint: Number(h.crash_point) })),
+      history: history.map((h) => ({ id: Number(h.id), crashPoint: Number(h.crash_point), edge: Number(h.edge) })),
     };
   });
 });

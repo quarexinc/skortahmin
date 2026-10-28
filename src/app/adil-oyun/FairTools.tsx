@@ -1,11 +1,16 @@
 'use client';
 
-import { Bomb, CheckCircle2, Copy, RefreshCw, Rocket, ShieldCheck, Spade, Cherry, XCircle } from 'lucide-react';
+import { Bomb, CheckCircle2, Copy, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Button, Card, Field, Input, Select, Spinner } from '@/components/ui';
+import { GameIcon } from '@/components/icons/GameIcons';
 import { handValue, rank, shuffle, suit } from '@/lib/games/blackjack';
+import { cardOf, RANK_LABEL, SUIT_LABEL } from '@/lib/games/hilo';
+import { diceMult, kenoDraw, kenoTable, limboPoint, plinkoTable, RED, scratchPay, scratchPick, wheelSegments, type InstantGame, type PlinkoRisk, type WheelRisk } from '@/lib/games/instant';
+import { bombRows, DIFFICULTY, isDifficulty } from '@/lib/games/towers';
+import { GAME_INFO, GAME_KEYS, type GameKey } from '@/lib/games/registry';
 import { minePositions, minesMultiplier } from '@/lib/games/mines';
 import { evaluate, spinGrid } from '@/lib/games/slots';
 import { fmtDateTime } from '@/lib/client';
@@ -31,16 +36,16 @@ async function floats(server: string, client: string, nonce: number, count: numb
   }
   return out;
 }
-async function crashPoint(seed: string) {
+async function crashPoint(seed: string, edge: number) {
   const h = hex((await hmac(seed, 'crash')).buffer as ArrayBuffer);
   const r = parseInt(h.slice(0, 13), 16) / 2 ** 52;
-  return Math.min(1000, Math.max(1, Math.floor(99 / (1 - r)) / 100));
+  return Math.min(1000, Math.max(1, Math.floor((100 * (1 - edge)) / (1 - r)) / 100));
 }
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const SUITS = ['♠', '♥', '♦', '♣'];
 const card = (c: number) => `${RANKS[rank(c)]}${SUITS[suit(c)]}`;
 
-type Game = 'mines' | 'slots' | 'blackjack' | 'crash';
+type Game = GameKey;
 
 export default function FairTools({ loggedIn }: { loggedIn: boolean }) {
   const { toast } = useAuth();
@@ -49,7 +54,7 @@ export default function FairTools({ loggedIn }: { loggedIn: boolean }) {
   const [busy, setBusy] = useState(false);
 
   const [game, setGame] = useState<Game>('mines');
-  const [f, setF] = useState({ server: '', client: '', nonce: '0', mines: '3', hash: '' });
+  const [f, setF] = useState({ server: '', client: '', nonce: '0', mines: '3', hash: '', edge: '1', rows: '12', risk: 'medium', diff: 'medium' });
   const [out, setOut] = useState<{ hashOk: boolean | null; hash: string; lines: React.ReactNode } | null>(null);
 
   const load = useCallback(() => api<Seeds>('/api/fair').then((r) => r.data && (setSeeds(r.data), setCs(r.data.clientSeed))), []);
@@ -79,9 +84,50 @@ export default function FairTools({ loggedIn }: { loggedIn: boolean }) {
     const hashOk = f.hash.trim() ? hash === f.hash.trim().toLowerCase() : null;
     const nonce = Math.max(0, Math.floor(Number(f.nonce) || 0));
     let lines: React.ReactNode;
+    const edge = Math.max(0, Math.min(25, Number(f.edge.replace(',', '.')) || 0)) / 100;
+    const INSTANT: string[] = ['dice', 'limbo', 'plinko', 'coinflip', 'keno', 'roulette', 'wheel', 'scratch'];
     if (game === 'crash') {
-      const cp = await crashPoint(server);
+      const cp = await crashPoint(server, edge);
       lines = <p className="text-3xl font-black">{fmtMult(cp)}</p>;
+    } else if (INSTANT.includes(game)) {
+      const g = game as InstantGame;
+      const fl = await floats(server, f.client.trim(), nonce, 12);
+      let body: React.ReactNode = null;
+      if (g === 'dice') body = <p>Zar: <b className="text-2xl">{(Math.floor(fl[0] * 10000) / 100).toFixed(2)}</b> <span className="text-xs text-slate-400">(50 hedefi için altı çarpanı {fmtMult(diceMult({ target: 50, dir: 'under' }, edge))})</span></p>;
+      if (g === 'limbo') body = <p>Sonuç: <b className="text-2xl">{fmtMult(limboPoint(fl[0], edge))}</b></p>;
+      if (g === 'plinko') {
+        const rows = Math.min(16, Math.max(8, Number(f.rows) || 12));
+        const path = fl.slice(0, rows).map((x) => (x >= 0.5 ? 1 : 0));
+        const bin = path.reduce((a: number, b) => a + b, 0);
+        body = <p>Yol: <code>{path.map((x) => (x ? 'S' : 'L')).join('')}</code> · kutu <b>{bin}</b> · çarpan <b>{fmtMult(plinkoTable(rows, f.risk as PlinkoRisk, edge)[bin])}</b></p>;
+      }
+      if (g === 'coinflip') body = <p>İlk 8 atış: <b>{fl.slice(0, 8).map((x) => (x < 0.5 ? 'Y' : 'T')).join(' ')}</b> <span className="text-xs text-slate-400">(Y = yazı, T = tura)</span></p>;
+      if (g === 'keno') {
+        const drawn = kenoDraw(fl);
+        body = <p>Çekilen: <b>{drawn.join(', ')}</b> <span className="text-xs text-slate-400">(5 seçimde 3 isabet çarpanı {fmtMult(kenoTable(5, edge)[3])})</span></p>;
+      }
+      if (g === 'roulette') {
+        const n = Math.floor(fl[0] * 37);
+        body = <p>Çıkan: <b className="text-2xl">{n}</b> <span className="text-slate-400">({n === 0 ? 'yeşil' : RED.has(n) ? 'kırmızı' : 'siyah'})</span></p>;
+      }
+      if (g === 'wheel') {
+        const seg = Math.floor(fl[0] * 30);
+        body = <p>Dilim <b>{seg + 1}</b> · çarpan <b>{fmtMult(wheelSegments(f.risk as WheelRisk, edge)[seg])}</b></p>;
+      }
+      if (g === 'scratch') {
+        const cells = fl.slice(0, 9).map(scratchPick);
+        const r = scratchPay(cells, edge);
+        body = <div><div className="grid w-40 grid-cols-3 gap-1 text-[10px]">{cells.map((c, i) => <span key={i} className="rounded bg-white/5 py-1.5 text-center">{c}</span>)}</div><p className="mt-2 text-xs text-slate-400">Toplam çarpan {fmtMult(r.mult)}</p></div>;
+      }
+      lines = body;
+    } else if (game === 'hilo') {
+      const fl = await floats(server, f.client.trim(), nonce, 80);
+      lines = <p className="text-sm">İlk kartlar: <b>{fl.slice(0, 12).map((x) => { const c = cardOf(x); return `${RANK_LABEL[c.rank]}${SUIT_LABEL[c.suit]}`; }).join(' ')}</b></p>;
+    } else if (game === 'towers') {
+      const d = isDifficulty(f.diff) ? f.diff : 'medium';
+      const fl = await floats(server, f.client.trim(), nonce, 32);
+      const rowsB = bombRows(fl, DIFFICULTY[d].cols, DIFFICULTY[d].bombs);
+      lines = <div className="space-y-1 text-xs">{rowsB.map((b, i) => <p key={i}>Kat {i + 1}: bomba {b.map((x) => x + 1).join(', ')}</p>).reverse()}</div>;
     } else if (game === 'mines') {
       const m = Math.min(24, Math.max(1, Number(f.mines) || 3));
       const pos = minePositions(await floats(server, f.client.trim(), nonce, 25), m);
@@ -167,10 +213,10 @@ export default function FairTools({ loggedIn }: { loggedIn: boolean }) {
       <Card className="mt-8">
         <h2 id="verify" className="text-lg font-black">Doğrulama aracı</h2>
         <p className="mt-1 text-sm text-slate-400">Hesaplama tamamen tarayıcında yapılır; hiçbir veri sunucuya gönderilmez.</p>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {([['mines', 'Mines', Bomb], ['slots', 'Slots', Cherry], ['blackjack', 'Blackjack', Spade], ['crash', 'Crash', Rocket]] as const).map(([k, l, I]) => (
-            <button key={k} onClick={() => { setGame(k); setOut(null); }} className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition ${game === k ? 'bg-violet-500/25 text-white ring-1 ring-violet-400/40' : 'bg-white/5 text-slate-400 hover:text-white'}`}>
-              <I size={16} /> {l}
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+          {GAME_KEYS.map((k) => (
+            <button key={k} onClick={() => { setGame(k); setOut(null); }} className={`flex items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold transition ${game === k ? 'bg-violet-500/25 text-white ring-1 ring-violet-400/40' : 'bg-white/5 text-slate-400 hover:text-white'}`}>
+              <GameIcon game={k} size={22} /> {GAME_INFO[k].name}
             </button>
           ))}
         </div>
@@ -182,6 +228,12 @@ export default function FairTools({ loggedIn }: { loggedIn: boolean }) {
               <Field label="İstemci tohumu"><Input value={f.client} onChange={(e) => setF({ ...f, client: e.target.value })} required /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Nonce"><Input type="number" min={0} value={f.nonce} onChange={(e) => setF({ ...f, nonce: e.target.value })} /></Field>
+                {['plinko'].includes(game) && (
+                  <Field label="Satır (8–16)"><Input type="number" min={8} max={16} value={f.rows} onChange={(e) => setF({ ...f, rows: e.target.value })} /></Field>
+                )}
+                {game === 'towers' && (
+                  <Field label="Zorluk"><Select value={f.diff} onChange={(e) => setF({ ...f, diff: e.target.value })}>{Object.entries(DIFFICULTY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</Select></Field>
+                )}
                 {game === 'mines' && (
                   <Field label="Mayın">
                     <Select value={f.mines} onChange={(e) => setF({ ...f, mines: e.target.value })}>{Array.from({ length: 24 }, (_, i) => <option key={i + 1}>{i + 1}</option>)}</Select>
@@ -189,6 +241,12 @@ export default function FairTools({ loggedIn }: { loggedIn: boolean }) {
                 )}
               </div>
             </>
+          )}
+          {['crash', 'limbo', 'dice', 'plinko', 'coinflip', 'keno', 'roulette', 'wheel', 'scratch', 'mines'].includes(game) && (
+            <Field label="Kasa payı (%)" hint="O elin oynandığı andaki değer; Crash için tur kartındaki kasa payı"><Input value={f.edge} onChange={(e) => setF({ ...f, edge: e.target.value })} inputMode="decimal" /></Field>
+          )}
+          {['plinko', 'wheel'].includes(game) && (
+            <Field label="Risk"><Select value={f.risk} onChange={(e) => setF({ ...f, risk: e.target.value })}><option value="low">Düşük</option><option value="medium">Orta</option><option value="high">Yüksek</option></Select></Field>
           )}
           <div className="sm:col-span-2"><Button type="submit"><ShieldCheck size={16} /> Hesapla</Button></div>
         </form>

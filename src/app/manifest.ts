@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'BloxyBet — Sanal kredilerle sosyal casino',
     short_name: 'BloxyBet',
-    description: 'Mines, Crash, Slots ve Blackjack sanal kredilerle. Gerçek para yok. 18+',
+    description: '14 oyun sanal kredilerle. Gerçek para yok. 18+',
     start_url: '/',
     display: 'standalone',
     background_color: '#05080f',

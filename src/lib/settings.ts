@@ -1,6 +1,7 @@
 // Site ayarları (admin panelden değiştirilir) + aktif duyurular. Kısa süreli bellek önbelleği.
 import 'server-only';
 import { cq, dbConfigured, q, type PoolClient } from '@/lib/db';
+import { DEFAULT_EDGES, EDGE_MAX, EDGE_MIN, GAME_KEYS, type GameKey } from '@/lib/games/registry';
 
 export interface SiteSettings {
   maintenance: boolean;
@@ -15,10 +16,12 @@ export interface SiteSettings {
   heroTitle: string;
   heroSubtitle: string;
   // oyunlar
-  minesEnabled: boolean;
-  crashEnabled: boolean;
-  slotsEnabled: boolean;
-  blackjackEnabled: boolean;
+  /** kapalı (bakımdaki) oyunlar */
+  disabledGames: string[];
+  /** oyun başına kasa payı (%) — herkese açık gösterilir */
+  edges: Record<string, number>;
+  /** blackjack ödeme oranı (1,5 = 3:2) */
+  blackjackPayout: number;
   minBet: number;
   maxBet: number;
   maxPayout: number;
@@ -42,11 +45,10 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   blogEnabled: true,
   heroTitle: 'Şansını sanal kredilerle dene.',
   heroSubtitle:
-    'Mines, Crash, Slots ve Blackjack — doğrulanabilir adil sonuçlar, günlük bonuslar, VIP seviyeleri. Gerçek para yok, yalnızca eğlence.',
-  minesEnabled: true,
-  crashEnabled: true,
-  slotsEnabled: true,
-  blackjackEnabled: true,
+    '14 oyun — Crash, Mines, Slots, Blackjack, Plinko, Rulet ve daha fazlası. Doğrulanabilir adil sonuçlar, günlük bonuslar, VIP seviyeleri. Gerçek para yok, yalnızca eğlence.',
+  disabledGames: [],
+  edges: { ...DEFAULT_EDGES },
+  blackjackPayout: 1.5,
   minBet: 0.1,
   maxBet: 10000,
   maxPayout: 1000000,
@@ -80,12 +82,14 @@ async function load(c?: PoolClient) {
   }
   try {
     const run = <T,>(text: string) => (c ? cq<T>(c, text) : q<T>(text));
-    const rows = await run<{ key: string; value: unknown }>('SELECT key, value FROM settings');
+    const [rows, announcements] = await Promise.all([
+      run<{ key: string; value: unknown }>('SELECT key, value FROM settings'),
+      run<Announcement>(`SELECT id, title, body, level FROM announcements WHERE active ORDER BY created_at DESC LIMIT 3`),
+    ]);
     const s = { ...DEFAULT_SETTINGS } as Record<string, unknown>;
     for (const r of rows) if (r.key in s && typeof r.value === typeof s[r.key]) s[r.key] = r.value;
-    const announcements = await run<Announcement>(
-      `SELECT id, title, body, level FROM announcements WHERE active ORDER BY created_at DESC LIMIT 3`,
-    );
+    s.edges = sanitizeEdges(s.edges);
+    s.disabledGames = (Array.isArray(s.disabledGames) ? s.disabledGames : []).filter((g): g is string => typeof g === 'string' && (GAME_KEYS as readonly string[]).includes(g));
     cache = { at: Date.now(), settings: s as unknown as SiteSettings, announcements };
   } catch (e) {
     console.error('[settings] okunamadı', e);
@@ -101,3 +105,15 @@ export async function getSettings(c?: PoolClient): Promise<SiteSettings> {
 export async function getAnnouncements(): Promise<Announcement[]> {
   return (await load()).announcements;
 }
+
+export function sanitizeEdges(v: unknown): Record<string, number> {
+  const src = v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
+  const out: Record<string, number> = { ...DEFAULT_EDGES };
+  for (const k of GAME_KEYS) {
+    const n = Number(src[k]);
+    if (src[k] != null && Number.isFinite(n)) out[k] = Math.round(Math.max(EDGE_MIN, Math.min(EDGE_MAX, n)) * 100) / 100;
+  }
+  return out;
+}
+
+export const gameEnabled = (s: SiteSettings, g: GameKey) => !s.disabledGames.includes(g);

@@ -51,10 +51,7 @@ export default function SettingsAdmin() {
       <div>
         <p className="label-muted mb-2">Oyunlar</p>
         <Card className="divide-y divide-white/5 py-2">
-          <Toggle label="Crash" desc="Kapalıyken yeni bahis alınmaz; devam eden tur tamamlanır." value={!!s.crashEnabled} onChange={set('crashEnabled')} />
-          <Toggle label="Mines" desc="Kapalıyken yeni oyun başlatılamaz; açık oyunlar bitirilebilir." value={!!s.minesEnabled} onChange={set('minesEnabled')} />
-          <Toggle label="Slots" desc="Kapalıyken çevirme yapılamaz." value={!!s.slotsEnabled} onChange={set('slotsEnabled')} />
-          <Toggle label="Blackjack" desc="Kapalıyken yeni el dağıtılmaz; açık eller bitirilebilir." value={!!s.blackjackEnabled} onChange={set('blackjackEnabled')} />
+          <p className="px-5 py-3 text-sm text-slate-400">Oyunları açıp kapatmak, kasa payını (şansı) ve blackjack ödemesini ayarlamak için <a href="/admin/oyunlar" className="text-violet-300 underline">Oyunlar &amp; şanslar</a> sayfasını kullan.</p>
         </Card>
         <Card className="mt-3 grid gap-4 sm:grid-cols-3">
           {num('minBet', 'En düşük bahis (kredi)', undefined, '0.01')}

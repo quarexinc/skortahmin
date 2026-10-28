@@ -1,6 +1,6 @@
-// Mines: 5x5 alan, oyuncu mayın sayısını seçer. Ev avantajı %1.
+// Mines: 5x5 alan, oyuncu mayın sayısını seçer. Kasa payı admin panelinden ayarlanır (varsayılan %1).
 export const TILES = 25;
-export const HOUSE = 0.99;
+export const DEFAULT_EDGE = 0.01;
 
 export function minePositions(values: number[], mines: number): number[] {
   const deck = Array.from({ length: TILES }, (_, i) => i);
@@ -12,8 +12,8 @@ export function minePositions(values: number[], mines: number): number[] {
 }
 
 /** k güvenli kare açıldıktan sonraki çarpan */
-export function minesMultiplier(mines: number, k: number): number {
-  let m = HOUSE;
+export function minesMultiplier(mines: number, k: number, edge = DEFAULT_EDGE): number {
+  let m = 1 - edge;
   for (let i = 0; i < k; i++) m *= (TILES - i) / (TILES - mines - i);
   return Math.floor(m * 10000) / 10000;
 }

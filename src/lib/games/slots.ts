@@ -95,3 +95,7 @@ export function evaluate(grid: Sym[][]): { lines: LineWin[]; scatter: number; sc
   const totalMult = lines.reduce((a, l) => a + l.mult, 0) / PAYLINES.length + scatterMult;
   return { lines, scatter, scatterMult, totalMult };
 }
+
+/** Ödeme tablosunun ölçeği: tablo ~%96,1 RTP için ayarlıdır; kasa payına göre orantılı ölçeklenir. */
+export const BASE_RTP = 0.961;
+export const slotScale = (edge: number) => (1 - edge) / BASE_RTP;

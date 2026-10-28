@@ -6,16 +6,14 @@ import { useEffect, useState } from 'react';
 import { Button, Card, Empty, PageHeader, Spinner } from '@/components/ui';
 import { api, fmtDateTime } from '@/lib/client';
 import { fmtCredits, fmtMult } from '@/lib/money';
+import { GAME_META } from '@/components/games/meta';
 
 interface Bet { id: number; game: string; amount: string; payout: string; multiplier: string; detail: Record<string, unknown> | null; server_hash: string | null; client_seed: string | null; nonce: number | null; created_at: string }
 interface Per { game: string; bets: number; wagered: string; paid: string; best: number }
 
-const GAMES = [
-  { id: '', n: 'Tümü', i: History },
-  { id: 'crash', n: 'Crash', i: Rocket },
-  { id: 'mines', n: 'Mines', i: Bomb },
-  { id: 'slots', n: 'Slots', i: Cherry },
-  { id: 'blackjack', n: 'Blackjack', i: Spade },
+const GAMES: { id: string; n: string; i: (p: { size?: number; className?: string }) => JSX.Element }[] = [
+  { id: '', n: 'Tümü', i: ({ size = 16 }) => <History size={size} /> },
+  ...Object.entries(GAME_META).map(([id, m]) => ({ id, n: m.name, i: m.icon })),
 ];
 
 function describe(b: Bet): string {
@@ -27,7 +25,7 @@ function describe(b: Bet): string {
     const hands = Array.isArray(d.hands) ? (d.hands as { result?: string }[]) : [];
     return hands.map((h) => ({ win: 'kazandı', lose: 'kaybetti', bust: 'battı', push: 'berabere', blackjack: 'blackjack' })[h.result ?? ''] ?? '?').join(' / ');
   }
-  return '';
+  return describeNew(b.game, d);
 }
 
 export default function GameHistory() {
@@ -103,4 +101,22 @@ export default function GameHistory() {
       </div>
     </div>
   );
+}
+
+const PLINKO_BINS = (d: Record<string, unknown>) => `${d.rows ?? '?'} satır · ${d.risk === 'high' ? 'yüksek' : d.risk === 'medium' ? 'orta' : 'düşük'} risk · kutu ${d.bin ?? '?'}`;
+
+function describeNew(game: string, d: Record<string, unknown>): string {
+  switch (game) {
+    case 'dice': return `${d.dir === 'over' ? 'Üstü' : 'Altı'} ${d.target} · zar ${d.roll}`;
+    case 'limbo': return `Hedef ${fmtMult(Number(d.target))} · sonuç ${fmtMult(Number(d.point))}`;
+    case 'plinko': return PLINKO_BINS(d);
+    case 'coinflip': return `${d.flips}x ${d.side === 'heads' ? 'yazı' : 'tura'} · ${Array.isArray(d.results) ? d.results.map((r) => (r === 'heads' ? 'Y' : 'T')).join('') : ''}`;
+    case 'keno': return `${Array.isArray(d.picks) ? d.picks.length : 0} seçim · ${Array.isArray(d.hits) ? d.hits.length : 0} isabet`;
+    case 'roulette': return `Çıkan ${d.number} (${d.color === 'red' ? 'kırmızı' : d.color === 'black' ? 'siyah' : 'yeşil'})`;
+    case 'wheel': return `${d.risk === 'high' ? 'Yüksek' : d.risk === 'medium' ? 'Orta' : 'Düşük'} risk · dilim ${Number(d.segment) + 1}`;
+    case 'hilo': return `${d.steps ?? 0} doğru tahmin`;
+    case 'towers': return `${Array.isArray(d.picks) ? d.picks.length : 0} kat${d.hit != null ? ' · bombaya basıldı' : ''}`;
+    case 'scratch': return Array.isArray(d.wins) && d.wins.length ? `${d.wins.length} eşleşme` : 'Eşleşme yok';
+    default: return '';
+  }
 }

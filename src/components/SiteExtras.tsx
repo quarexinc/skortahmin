@@ -91,17 +91,18 @@ export function BackToTop() {
 // 18+ yaş kapısı: ilk ziyarette sorulur. Yaşını doğrulamış üyelere gösterilmez.
 // ---------------------------------------------------------------------------
 export function AgeGate() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const [state, setState] = useState<'hidden' | 'ask' | 'denied'>('hidden');
   useEffect(() => {
-    if (user?.ageVerified) return;
+    if (!ready) return;
+    if (user?.ageVerified) return setState('hidden');
     try {
       if (localStorage.getItem('bb_age_ok') === '1') return;
     } catch {
       /* depolama kapalıysa her ziyarette sorulur */
     }
     setState('ask');
-  }, [user?.ageVerified]);
+  }, [ready, user?.ageVerified]);
   if (state === 'hidden') return null;
   const yes = () => {
     try {
@@ -142,11 +143,14 @@ export function AgeGate() {
 // Oturum hatırlatıcısı: üyenin seçtiği aralıkla "ne kadar süredir oynuyorsun" uyarısı.
 // ---------------------------------------------------------------------------
 export function SessionReminder() {
+  const { user } = useAuth();
+  const uid = user?.id;
   const [every, setEvery] = useState<number | null>(null);
   const [shown, setShown] = useState<number | null>(null);
   useEffect(() => {
+    if (!uid) return setEvery(null);
     api<{ session_reminder_min: number | null }>('/api/account/responsible').then((r) => setEvery(r.data?.session_reminder_min ?? null));
-  }, []);
+  }, [uid]);
   useEffect(() => {
     if (!every) return;
     let start = Date.now();

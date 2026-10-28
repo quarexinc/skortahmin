@@ -125,12 +125,12 @@ function BalancePill() {
   return (
     <Link
       href="/cuzdan"
-      className="flex h-9 items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 pl-2.5 pr-1 text-sm font-bold tabular-nums text-white transition hover:border-violet-400/60"
+      className="flex h-9 min-w-0 items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/10 pl-2.5 pr-1 text-sm font-bold tabular-nums text-white transition hover:border-violet-400/60 max-sm:gap-1.5 max-sm:pr-2.5"
       title="Cüzdan"
     >
       <Coins size={16} className="text-amber-300" />
-      <span className="max-w-[7rem] truncate">{fmtCredits(user.balance)}</span>
-      <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white">
+      <span className="max-w-[7rem] truncate max-sm:max-w-[4.6rem] max-sm:text-xs">{fmtCredits(user.balance)}</span>
+      <span className="grid h-7 w-7 max-sm:hidden place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 text-white">
         <Wallet size={14} />
       </span>
     </Link>
@@ -166,7 +166,7 @@ function UserMenu() {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition hover:bg-white/5" aria-label="Kullanıcı menüsü">
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 transition hover:bg-white/5 max-sm:pr-1" aria-label="Kullanıcı menüsü">
         <Avatar name={user.name} color={user.avatarColor} size={30} />
         <span className="hidden max-w-[8rem] truncate text-sm font-medium text-slate-200 lg:block">{user.name}</span>
 
@@ -206,7 +206,7 @@ function UserMenu() {
 }
 
 export default function Navbar() {
-  const { user, enabled } = useAuth();
+  const { user, enabled, ready } = useAuth();
   const pathname = usePathname();
   const [mobile, setMobile] = useState(false);
   useEffect(() => setMobile(false), [pathname]);
@@ -215,7 +215,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-ink-950/85 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 max-sm:gap-2 max-sm:px-3">
         <Link href="/" className="shrink-0" aria-label="BloxyBet ana sayfa">
           <Logo size={30} />
         </Link>
@@ -234,7 +234,7 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex min-w-0 items-center gap-1.5 max-sm:gap-1">
           <SearchTrigger />
           {user ? (
             <>
@@ -242,7 +242,7 @@ export default function Navbar() {
               <NotificationBell />
               <UserMenu />
             </>
-          ) : enabled ? (
+          ) : enabled && ready ? (
             <>
               <Link href="/giris" className="hidden rounded-xl px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white sm:block">
                 Giriş yap
@@ -269,7 +269,7 @@ export default function Navbar() {
               <l.icon size={17} className="text-slate-500" /> {l.label}
             </Link>
           ))}
-          {!user && enabled && (
+          {!user && enabled && ready && (
             <Link href="/giris" className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300">
               Giriş yap
             </Link>

@@ -10,7 +10,7 @@ import { api, timeAgo } from '@/lib/client';
 interface T { id: number; subject: string; category: string; priority: string; status: string; updated_at: string; messages: number; last_by_staff: boolean }
 
 export default function SupportPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const [items, setItems] = useState<T[] | null>(null);
   useEffect(() => {
     if (user) api<{ items: T[] }>('/api/tickets').then((r) => setItems(r.data?.items ?? []));
@@ -19,7 +19,9 @@ export default function SupportPage() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader title="Destek talepleri" subtitle="Sorularını ve sorunlarını ekibimize ilet, yanıtları buradan takip et." actions={user && <LinkButton href="/destek/yeni">+ Yeni talep</LinkButton>} />
-      {!user ? (
+      {!ready ? (
+        <Spinner />
+      ) : !user ? (
         <Empty icon={LifeBuoy} title="Talep açmak için giriş yap">
           Üye değilsen <Link href="/iletisim" className="text-accent-soft underline">iletişim formunu</Link> kullanabilirsin.
           <div className="mt-4 flex justify-center gap-2">

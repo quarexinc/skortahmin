@@ -6,7 +6,7 @@ export interface DefaultFaq {
 }
 
 export const DEFAULT_FAQS: DefaultFaq[] = [
-  { category: 'Genel', q: 'BloxyBet nedir?', a: 'BloxyBet, Mines, Crash, Slots ve Blackjack oyunlarının yalnızca sanal kredilerle oynandığı bir sosyal casino sitesidir. Gerçek para yatırılmaz, kazanılmaz ve çekilmez.' },
+  { category: 'Genel', q: 'BloxyBet nedir?', a: 'BloxyBet, Crash, Mines, Slots, Blackjack, Dice, Limbo, Plinko, Coinflip, Keno, Rulet, Çark, Hi-Lo, Kule ve Kazı Kazan oyunlarının yalnızca sanal kredilerle oynandığı bir sosyal casino sitesidir. Gerçek para yatırılmaz, kazanılmaz ve çekilmez.' },
   { category: 'Krediler', q: 'Krediler paraya çevrilebilir mi?', a: 'Hayır. Krediler tamamen sanaldır; para, ürün, oyun içi eşya, kripto ya da başka herhangi bir değerle alınıp satılamaz, takas edilemez ve dışarı çekilemez.' },
   { category: 'Krediler', q: 'Nasıl kredi kazanırım?', a: 'Üye olduğunda hoş geldin kredisi alırsın. Ayrıca günlük bonus, musluk (birkaç dakikada bir küçük kredi), rakeback, VIP seviye ödülleri ve promosyon kodları ile kredi toplayabilirsin.' },
   { category: 'Krediler', q: 'Kasa ne işe yarar?', a: 'Kasa, kredilerinin bir kısmını oyun bakiyenden ayrı tutmanı sağlar. Kasadaki krediler oyunlarda kullanılmaz; istediğin zaman bakiyene geri aktarabilirsin.' },

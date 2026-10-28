@@ -1,6 +1,6 @@
 # BloxyBet
 
-Sanal kredilerle oynanan sosyal casino: **Crash, Mines, Slots, Blackjack**.
+Sanal kredilerle oynanan sosyal casino: **14 oyun: Crash, Mines, Slots, Blackjack, Dice, Limbo, Plinko, Coinflip, Keno, Rulet, Çark, Hi-Lo, Kule, Kazı Kazan**.
 Gerçek para, kripto veya herhangi bir değerli şey yatırılmaz, kazanılmaz, çekilmez. Krediler satın alınamaz ve paraya çevrilemez. **18+**
 
 ## Çalıştırma

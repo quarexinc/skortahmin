@@ -8,7 +8,7 @@ import { readingMinutes } from '@/lib/markdown';
 import { getSettings } from '@/lib/settings';
 
 export const metadata: Metadata = { title: 'Blog', description: 'Oyun rehberleri, etkinlikler ve analiz rehberleri.' };
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface P { slug: string; title: string; excerpt: string | null; cover_url: string | null; tags: string | null; views: number; created_at: Date; body: string }
 

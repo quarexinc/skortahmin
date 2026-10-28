@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { Avatar, Button, Card, Field, Input, Notice, PageHeader, Select, Textarea } from '@/components/ui';
 import { api } from '@/lib/client';
+import { GAME_INFO } from '@/lib/games/registry';
 
 const COLORS = ['#22c55e', '#38bdf8', '#f59e0b', '#a78bfa', '#f472b6', '#2dd4bf', '#fb7185', '#facc15', '#60a5fa'];
 
@@ -97,10 +98,9 @@ export default function ProfilePage() {
             <Field label="Favori oyun">
               <Select value={p.favoriteGame} onChange={(e) => setP({ ...p, favoriteGame: e.target.value })}>
                 <option value="">Seçilmedi</option>
-                <option value="crash">Crash</option>
-                <option value="mines">Mines</option>
-                <option value="slots">Slots</option>
-                <option value="blackjack">Blackjack</option>
+                {Object.entries(GAME_INFO).map(([k, v]) => (
+                  <option key={k} value={k}>{v.name}</option>
+                ))}
               </Select>
             </Field>
           </div>

@@ -20,7 +20,7 @@ const GROUPS: { title: string; items: { href: string; label: string; icon: Lucid
   {
     title: 'Casino',
     items: [
-      { href: '/admin/oyunlar', label: 'Oyunlar & eller', icon: Gamepad2 },
+      { href: '/admin/oyunlar', label: 'Oyunlar & şanslar', icon: Gamepad2 },
       { href: '/admin/crash', label: 'Crash turları', icon: Rocket },
       { href: '/admin/islemler', label: 'Kredi işlemleri', icon: Coins },
     ],

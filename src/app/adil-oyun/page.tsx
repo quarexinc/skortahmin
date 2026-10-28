@@ -21,7 +21,7 @@ export default async function FairPage() {
       <p className="label-muted">Adil oyun</p>
       <h1 className="mt-2 text-4xl font-black tracking-tight">Her sonucu kendin doğrula</h1>
       <p className="mt-3 max-w-2xl text-slate-400">
-        Mines, Slots ve Blackjack sonuçları <code>HMAC_SHA256(sunucuTohumu, istemciTohumu:nonce:imleç)</code> çıktısından üretilen sayılarla belirlenir.
+        Mines, Slots, Blackjack, Dice, Limbo, Plinko, Coinflip, Keno, Rulet, Çark, Hi-Lo, Kule ve Kazı Kazan sonuçları <code>HMAC_SHA256(sunucuTohumu, istemciTohumu:nonce:imleç)</code> çıktısından üretilen sayılarla belirlenir.
         Crash’te her tur kendi tohumuna sahiptir; turun hash’i bahisler açılmadan önce gösterilir ve tur bitince tohum açıklanır.
       </p>
 
