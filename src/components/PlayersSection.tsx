@@ -113,6 +113,19 @@ function TeamPlayers({ side, data }: { side: 'home' | 'away'; data: AnalysisResp
 }
 
 export default function PlayersSection({ data }: { data: AnalysisResponse }) {
+  if (data.extrasPending) {
+    return (
+      <div className="grid gap-4 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className="space-y-3">
+            <div className="h-6 w-40 animate-pulse rounded-lg bg-ink-800" />
+            <div className="h-64 animate-pulse rounded-2xl bg-ink-800" />
+          </div>
+        ))}
+        <p className="text-xs text-slate-500 lg:col-span-2">Oyuncu verileri yükleniyor…</p>
+      </div>
+    );
+  }
   const hasData = data.topScorers || data.home.squad || data.away.squad;
   if (!hasData) {
     return (

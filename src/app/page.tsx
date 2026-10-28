@@ -57,9 +57,22 @@ export default function HomePage() {
       });
   }, []);
 
+  // Yalnızca bugün ve yarın baştan yüklenir; diğer günler seçilince yüklenir.
+  // (API-Football ücretsiz planı dakikada 10 istekle sınırlı; 10 günü birden
+  // istemek kuyruğu tıkayıp maç analizlerini yavaşlatıyordu.)
   useEffect(() => {
-    dates.forEach(loadDay);
+    loadDay(dates[0]);
+    const t = setTimeout(() => loadDay(dates[1]), 400);
+    return () => clearTimeout(t);
   }, [dates, loadDay]);
+
+  const selectDay = useCallback(
+    (key: string) => {
+      setSelected(key);
+      if (!days[key]) loadDay(key);
+    },
+    [days, loadDay],
+  );
 
   const dayMeta = useMemo(
     () =>
@@ -119,7 +132,7 @@ export default function HomePage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-5">
-        <DateStrip days={dayMeta} onSelect={setSelected} />
+        <DateStrip days={dayMeta} onSelect={selectDay} />
 
         <div className="mt-4 space-y-3">
           <LeagueFilter value={league} onChange={setLeague} />
@@ -129,11 +142,11 @@ export default function HomePage() {
         <div className="mt-5 mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="text-lg font-bold text-slate-100">{fmtDayLong(`${selected}T12:00:00`)}</h1>
           <span className="text-sm text-slate-500">
-            {day?.loading ? 'yükleniyor…' : visible.length > 0 ? `${visible.length} maç` : ''}
+            {!day || day.loading ? 'yükleniyor…' : visible.length > 0 ? `${visible.length} maç` : ''}
           </span>
         </div>
 
-        {day?.loading ? (
+        {!day || day.loading ? (
           <div className="grid gap-3 md:grid-cols-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-24" />

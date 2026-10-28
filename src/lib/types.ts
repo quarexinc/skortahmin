@@ -352,4 +352,21 @@ export interface AnalysisResponse {
   model: ModelResult;
   warnings: string[];
   dailyCount: number;
+  /** true ise kadro/künye/krallık/kupa verileri /extras uç noktasından ayrıca yüklenecek */
+  extrasPending?: boolean;
+}
+
+export interface TeamExtras {
+  profile: TeamAnalysis['profile'];
+  squad: TeamAnalysis['squad'];
+  squadSeason: number | null;
+  playerTrophies: TeamAnalysis['playerTrophies'];
+}
+
+export interface ExtrasResponse {
+  home: TeamExtras;
+  away: TeamExtras;
+  topScorers: TopScorerRow[] | null;
+  topScorersSeason: number | null;
+  warnings: string[];
 }

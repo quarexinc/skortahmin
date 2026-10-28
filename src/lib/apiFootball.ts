@@ -125,72 +125,79 @@ export async function apiFootball<T>(
     );
   }
 
-  return rateLimited(async (): Promise<T> => {
-    bumpDailyCount();
-    const url = new URL(`${API_FOOTBALL_BASE_URL.replace(/\/$/, '')}/${endpoint}`);
-    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
-    if (opts.timezone) url.searchParams.set('timezone', TIMEZONE);
+  const url = new URL(`${API_FOOTBALL_BASE_URL.replace(/\/$/, '')}/${endpoint}`);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
+  if (opts.timezone) url.searchParams.set('timezone', TIMEZONE);
 
-    let res: Response;
+  // Hız limiti (429 ya da errors.rateLimit) gelirse en fazla 2 kez bekleyip yeniden dene.
+  for (let attempt = 0; ; attempt++) {
     try {
-      for (let attempt = 0; ; attempt++) {
-        let r: Response;
-        try {
-          r = await fetch(url, {
-            headers: { 'x-apisports-key': API_FOOTBALL_KEY },
-            cache: 'no-store',
-          });
-        } catch (netErr) {
-          const cause = netErr instanceof Error && netErr.cause ? String(netErr.cause) : '';
-          console.error('[api] fetch hatası:', netErr instanceof Error ? netErr.message : String(netErr), cause);
-          throw new ApiFootballError(
-            `API-Football sunucusuna ulaşılamadı (ağ hatası): ${netErr instanceof Error ? netErr.message : ''} ${cause}`,
-            502,
-          );
-        }
-        if (r.status === 429 && attempt === 0) {
-          console.log('[api] 429 (hız limiti) alındı; 30 sn beklendikten sonra 1 kez yeniden denenecek.');
-          await sleep(30_000);
-          continue;
-        }
-        res = r;
-        break;
-      }
+      return await rateLimited(() => requestOnce<T>(url));
     } catch (e) {
-      if (e instanceof ApiFootballError) throw e;
-      throw new ApiFootballError('Beklenmeyen istek hatası.', 502);
+      if (e instanceof ApiFootballError && e.code === 429 && attempt < 2) {
+        console.log('[api] hız limiti; 12 sn beklenip yeniden denenecek.');
+        await sleep(12_000);
+        continue;
+      }
+      throw e;
     }
+  }
+}
 
-    if (res.status === 429) {
-      throw new ApiFootballError('API-Football hız limiti (429) aşıldı; lütfen biraz sonra tekrar deneyin.', 429);
-    }
-    if (res.status === 401) {
-      throw new ApiFootballError('API-Football anahtarı geçersiz görünüyor (401).', 401);
-    }
+async function requestOnce<T>(url: URL): Promise<T> {
+  bumpDailyCount();
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: { 'x-apisports-key': API_FOOTBALL_KEY },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (netErr) {
+    const cause = netErr instanceof Error && netErr.cause ? String(netErr.cause) : '';
+    console.error('[api] fetch hatası:', netErr instanceof Error ? netErr.message : String(netErr), cause);
+    throw new ApiFootballError(
+      `API-Football sunucusuna ulaşılamadı (ağ hatası): ${netErr instanceof Error ? netErr.message : ''} ${cause}`,
+      502,
+    );
+  }
 
-    let json: ApiEnvelope<T>;
-    try {
-      json = (await res.json()) as ApiEnvelope<T>;
-    } catch {
-      throw new ApiFootballError(`API-Football beklenmeyen bir yanıt döndürdü (HTTP ${res.status}).`, 502);
-    }
+  if (res.status === 429) {
+    throw new ApiFootballError('API-Football hız limiti (429) aşıldı; lütfen biraz sonra tekrar deneyin.', 429);
+  }
+  if (res.status === 401) {
+    throw new ApiFootballError('API-Football anahtarı geçersiz görünüyor (401).', 401);
+  }
 
-    const errs = json.errors ?? null;
-    const isPlan =
-      !!errs && typeof errs === 'object' && !Array.isArray(errs) && Object.keys(errs).length > 0;
-    const message = errorText(errs);
-    if (message) {
+  let json: ApiEnvelope<T>;
+  try {
+    json = (await res.json()) as ApiEnvelope<T>;
+  } catch {
+    throw new ApiFootballError(`API-Football beklenmeyen bir yanıt döndürdü (HTTP ${res.status}).`, 502);
+  }
+
+  const errs = json.errors ?? null;
+  const message = errorText(errs);
+  if (message) {
+    const keys = errs && typeof errs === 'object' && !Array.isArray(errs) ? Object.keys(errs) : [];
+    if (keys.includes('rateLimit') || /too many requests/i.test(message)) {
+      throw new ApiFootballError(`API-Football: ${message}`, 429);
+    }
+    if (keys.includes('requests') || /request limit for the day/i.test(message)) {
       throw new ApiFootballError(
-        `API-Football: ${message}`,
-        res.status >= 400 ? res.status : 400,
-        isPlan,
+        'API-Football günlük istek limiti doldu; yeni veriler yarın tekrar alınabilecek.',
+        503,
+        false,
+        true,
       );
     }
+    const isPlan = keys.includes('plan') || /Free plans do not have access/i.test(message);
+    throw new ApiFootballError(`API-Football: ${message}`, res.status >= 400 ? res.status : 400, isPlan);
+  }
 
-    const data = (json.response ?? json.data ?? null) as T | null;
-    if (data === null || data === undefined) {
-      throw new ApiFootballError('API-Football boş veri döndürdü.', 404, isPlan);
-    }
-    return data as T;
-  });
+  const data = (json.response ?? json.data ?? null) as T | null;
+  if (data === null || data === undefined) {
+    throw new ApiFootballError('API-Football boş veri döndürdü.', 404);
+  }
+  return data as T;
 }

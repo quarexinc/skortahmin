@@ -5,10 +5,11 @@ import { ACTIVE_LEAGUE_IDS } from '@/config/leagues';
 import { apiFootball, ApiFootballError, getDailyCount } from '@/lib/apiFootball';
 import { cachedFetch, TTL } from '@/lib/cache';
 import { lightFixture } from '@/lib/parsers';
-import type { FixtureRaw } from '@/lib/types';
+import type { FixtureRaw, LightFixture } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -18,15 +19,17 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { value, hit } = await cachedFetch<FixtureRaw[]>(
-      `fixtures:${date}`,
+    // Filtrelenmiş hafif liste saklanır (tam günlük yanıt çok büyük olabilir).
+    const { value: fixtures, hit } = await cachedFetch<LightFixture[]>(
+      `fixtures-light:${date}`,
       TTL.fixtures,
-      () => apiFootball<FixtureRaw[]>('fixtures', { date }, { timezone: true }),
+      async () => {
+        const all = await apiFootball<FixtureRaw[]>('fixtures', { date }, { timezone: true });
+        return (Array.isArray(all) ? all : [])
+          .filter((f) => f.league && ACTIVE_LEAGUE_IDS.has(f.league.id))
+          .map(lightFixture);
+      },
     );
-    const all = Array.isArray(value) ? value : [];
-    const fixtures = all
-      .filter((f) => f.league && ACTIVE_LEAGUE_IDS.has(f.league.id))
-      .map(lightFixture);
     return NextResponse.json({
       date,
       count: fixtures.length,

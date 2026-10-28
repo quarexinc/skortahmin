@@ -16,7 +16,7 @@ import PredictionPanel from '@/components/PredictionPanel';
 import Skeleton from '@/components/Skeleton';
 import Tabs from '@/components/Tabs';
 import { trApiError } from '@/lib/format';
-import type { AnalysisResponse } from '@/lib/types';
+import type { AnalysisResponse, ExtrasResponse } from '@/lib/types';
 
 type TabId = 'genel' | 'form' | 'h2h' | 'oyuncular';
 
@@ -52,23 +52,62 @@ export default function MacPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>('genel');
 
+  const [slow, setSlow] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     setData(null);
     setError(null);
+    setSlow(false);
     setTab('genel');
+    const slowTimer = setTimeout(() => !cancelled && setSlow(true), 6000);
+
+    const loadExtras = (attempt = 0) => {
+      fetch(`/api/match/${fixtureId}/extras`)
+        .then(async (r) => {
+          const j = (await r.json().catch(() => null)) as (ExtrasResponse & { error?: string }) | null;
+          if (cancelled) return;
+          if (!r.ok || !j || j.error) {
+            if (attempt < 1) return void setTimeout(() => !cancelled && loadExtras(attempt + 1), 3000);
+            setData((d) => (d ? { ...d, extrasPending: false } : d));
+            return;
+          }
+          setData((d) =>
+            d
+              ? {
+                  ...d,
+                  extrasPending: false,
+                  home: { ...d.home, ...j.home },
+                  away: { ...d.away, ...j.away },
+                  topScorers: j.topScorers,
+                  topScorersSeason: j.topScorersSeason,
+                  warnings: [...d.warnings, ...j.warnings.filter((w) => !d.warnings.includes(w))],
+                }
+              : d,
+          );
+        })
+        .catch(() => {
+          if (!cancelled) setData((d) => (d ? { ...d, extrasPending: false } : d));
+        });
+    };
+
     fetch(`/api/match/${fixtureId}/analysis`)
       .then(async (r) => {
         const j = await r.json().catch(() => null);
         if (cancelled) return;
         if (!r.ok || !j || j.error) setError(j?.error ?? 'Analiz verisi alınamadı.');
-        else setData(j);
+        else {
+          setData(j);
+          if (j.extrasPending) loadExtras();
+        }
       })
       .catch(() => {
         if (!cancelled) setError('Sunucuya ulaşılamadı. Tekrar deneyin.');
-      });
+      })
+      .finally(() => clearTimeout(slowTimer));
     return () => {
       cancelled = true;
+      clearTimeout(slowTimer);
     };
   }, [fixtureId]);
 
@@ -85,7 +124,20 @@ export default function MacPage() {
     );
   }
 
-  if (!data) return <MatchSkeleton />;
+  if (!data)
+    return (
+      <>
+        {slow && (
+          <div className="mx-auto max-w-5xl px-4 pt-6">
+            <Alert variant="info" title="Analiz hazırlanıyor">
+              Bu maç ilk kez açılıyor; veriler API-Football&apos;dan çekiliyor (ücretsiz plan dakikada 10 istekle sınırlı).
+              Birkaç saniye sürebilir — sonraki açılışlar anında gelir.
+            </Alert>
+          </div>
+        )}
+        <MatchSkeleton />
+      </>
+    );
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
