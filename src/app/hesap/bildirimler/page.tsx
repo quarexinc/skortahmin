@@ -1,4 +1,5 @@
 'use client';
+import { Bell } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -38,7 +39,7 @@ export default function NotificationsPage() {
       {items == null ? (
         <Spinner />
       ) : items.length === 0 ? (
-        <Empty icon="🔔" title="Bildirim yok">Tahminlerin sonuçlandığında veya taleplerine yanıt geldiğinde burada göreceksin.</Empty>
+        <Empty icon={Bell} title="Bildirim yok">Tahminlerin sonuçlandığında veya taleplerine yanıt geldiğinde burada göreceksin.</Empty>
       ) : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((n) => (

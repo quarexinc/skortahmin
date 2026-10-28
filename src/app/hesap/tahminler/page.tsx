@@ -1,4 +1,5 @@
 'use client';
+import { Target } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -37,7 +38,7 @@ export default function MyPredictions() {
         ))}
       </div>
       {items.length === 0 ? (
-        <Empty icon="🎯" title="Burada tahmin yok">
+        <Empty icon={Target} title="Burada tahmin yok">
           Bir maç seç ve skor tahminini gir.
           <div className="mt-4"><LinkButton href="/maclar">Maçlara git</LinkButton></div>
         </Empty>
@@ -59,7 +60,7 @@ export default function MyPredictions() {
               </div>
               <div className="w-24 text-right">
                 {p.status === 'scored' ? (
-                  <Badge color={p.points === 3 ? 'green' : p.points === 1 ? 'blue' : 'slate'}>{p.points === 3 ? '🎯 ' : ''}{p.points} puan</Badge>
+                  <Badge color={p.points === 3 ? 'green' : p.points === 1 ? 'blue' : 'slate'}>{p.points} puan</Badge>
                 ) : p.status === 'void' ? (
                   <Badge color="red">İptal</Badge>
                 ) : (

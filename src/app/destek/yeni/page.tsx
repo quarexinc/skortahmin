@@ -1,4 +1,5 @@
 'use client';
+import { ArrowLeft } from 'lucide-react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -37,7 +38,7 @@ export default function NewTicket() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
-      <Link href="/destek" className="text-sm text-slate-400 hover:text-white">← Taleplerim</Link>
+      <Link href="/destek" className="text-sm text-slate-400 hover:text-white"><ArrowLeft size={14} className="inline" /> Taleplerim</Link>
       <div className="mt-3"><PageHeader title="Yeni destek talebi" subtitle="Sorununu olabildiğince ayrıntılı anlat; ilgili maç veya sayfa bağlantısını eklemen çözümü hızlandırır." /></div>
       <Card>
         <form onSubmit={submit} className="space-y-4">

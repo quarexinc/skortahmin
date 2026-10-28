@@ -1,4 +1,5 @@
 'use client';
+import { Gem, MessageSquare, ShieldCheck } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -66,7 +67,7 @@ export default function CommentsSection({ fixtureId }: { fixtureId: number }) {
       {items == null ? (
         <Spinner />
       ) : items.length === 0 ? (
-        <Empty icon="🗨️" title="Henüz yorum yok">Maç hakkındaki ilk yorumu sen yaz.</Empty>
+        <Empty icon={MessageSquare} title="Henüz yorum yok">Maç hakkındaki ilk yorumu sen yaz.</Empty>
       ) : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((c) => (
@@ -75,8 +76,8 @@ export default function CommentsSection({ fixtureId }: { fixtureId: number }) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm">
                   <span className="font-semibold">{c.name}</span>
-                  {c.admin && <span className="ml-1.5 text-[11px] text-violet-300">🛡️ Yönetici</span>}
-                  {!c.admin && c.premium && <span className="ml-1.5 text-[11px]">💎</span>}
+                  {c.admin && <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-violet-300"><ShieldCheck size={12} /> Yönetici</span>}
+                  {!c.admin && c.premium && <Gem size={12} className="ml-1.5 inline text-amber-300" aria-label="Premium" />}
                   <span className="ml-2 text-xs text-slate-500">{timeAgo(c.created_at)}</span>
                 </p>
                 <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-200">{c.body}</p>

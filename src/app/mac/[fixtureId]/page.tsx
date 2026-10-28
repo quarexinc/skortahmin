@@ -1,4 +1,6 @@
 'use client';
+import AdSlot from '@/components/AdSlot';
+import { ArrowLeft } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Maç Analiz Sayfası — /mac/[fixtureId]
@@ -122,7 +124,7 @@ export default function MacPage() {
           {error}
         </Alert>
         <Link href="/maclar" className="mt-4 inline-block text-sm text-accent-soft hover:underline">
-          ← Maç listesine dön
+          <ArrowLeft size={14} className="inline" /> Maç listesine dön
         </Link>
       </main>
     );
@@ -146,7 +148,7 @@ export default function MacPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <Link href="/maclar" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white">
-        ← Maç listesi
+        <ArrowLeft size={14} /> Maç listesi
       </Link>
 
       <MatchHeader data={data} />
@@ -154,6 +156,8 @@ export default function MacPage() {
       <div className="mt-4">
         <MatchActions data={data} />
       </div>
+
+      <AdSlot placement="match_top" className="mt-4" />
 
       <div className="mt-4">
         <UserPredictionBox fixture={data.fixture} />
@@ -180,6 +184,8 @@ export default function MacPage() {
         {tab === 'oyuncular' && <PlayersSection data={data} />}
         {tab === 'yorumlar' && <CommentsSection fixtureId={data.fixture.id} />}
       </div>
+
+      <AdSlot placement="match_bottom" className="mt-8" />
 
     </main>
   );

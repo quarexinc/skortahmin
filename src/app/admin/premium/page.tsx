@@ -1,4 +1,5 @@
 'use client';
+import { Gem } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -60,7 +61,7 @@ export default function PremiumAdmin() {
           <button key={k} onClick={() => setStatus(k)} className={`chip ${status === k ? 'chip-active' : ''}`}>{l}</button>
         ))}
       </div>
-      {!items ? <Spinner /> : items.length === 0 ? <Empty icon="💎" title="Talep yok" /> : <div className="space-y-3">{items.map((r) => <Row key={r.id} r={r} onDone={load} />)}</div>}
+      {!items ? <Spinner /> : items.length === 0 ? <Empty icon={Gem} title="Talep yok" /> : <div className="space-y-3">{items.map((r) => <Row key={r.id} r={r} onDone={load} />)}</div>}
     </div>
   );
 }

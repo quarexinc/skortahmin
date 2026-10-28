@@ -12,6 +12,13 @@ export interface SiteSettings {
   premiumPriceText: string;
   premiumPaymentInfo: string;
   freeCouponLimit: number;
+  adsEnabled: boolean;
+  hideAdsForPremium: boolean;
+  cookieBanner: boolean;
+  newsletterEnabled: boolean;
+  blogEnabled: boolean;
+  heroTitle: string;
+  heroSubtitle: string;
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -25,6 +32,14 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   premiumPaymentInfo:
     'Premium talebinizi gönderdikten sonra ödeme bilgileri destek ekibimiz tarafından size iletilir. Ödeme onaylanınca üyeliğiniz yönetici tarafından aktifleştirilir.',
   freeCouponLimit: 3,
+  adsEnabled: true,
+  hideAdsForPremium: true,
+  cookieBanner: true,
+  newsletterEnabled: true,
+  blogEnabled: true,
+  heroTitle: 'Futbolu sayılarla oku.',
+  heroSubtitle:
+    'Gerçek maç verileri ve şeffaf bir Poisson modeliyle her maç için skor olasılıkları. Analizi incele, tahminini yap, liderlik tablosunda yarış.',
 };
 
 export interface Announcement {

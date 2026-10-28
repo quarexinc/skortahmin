@@ -1,3 +1,4 @@
+import { ArrowRight, HelpCircle, LifeBuoy, MessageCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -22,19 +23,19 @@ export default async function Page() {
       </div>
       <aside className="space-y-4">
         <div className="card p-5">
-          <p className="font-semibold">💬 Canlı destek</p>
+          <p className="flex items-center gap-2 font-semibold"><MessageCircle size={18} className="text-accent-soft" /> Canlı destek</p>
           <p className="mt-1 text-sm text-slate-400">Üyeysen sağ alttaki balondan anında yazabilirsin.</p>
           <p className="mt-2 text-xs text-slate-500">{s.supportHours}</p>
         </div>
         <div className="card p-5">
-          <p className="font-semibold">🎫 Destek talepleri</p>
+          <p className="flex items-center gap-2 font-semibold"><LifeBuoy size={18} className="text-accent-soft" /> Destek talepleri</p>
           <p className="mt-1 text-sm text-slate-400">Taleplerini ve yanıtları tek yerden takip et.</p>
-          <Link href="/destek" className="mt-2 inline-block text-sm text-accent-soft hover:underline">Taleplerim →</Link>
+          <Link href="/destek" className="mt-2 inline-block text-sm text-accent-soft hover:underline">Taleplerim <ArrowRight size={13} className="inline" /></Link>
         </div>
         <div className="card p-5">
-          <p className="font-semibold">❓ SSS</p>
+          <p className="flex items-center gap-2 font-semibold"><HelpCircle size={18} className="text-accent-soft" /> SSS</p>
           <p className="mt-1 text-sm text-slate-400">Sık sorulan soruların yanıtları.</p>
-          <Link href="/sss" className="mt-2 inline-block text-sm text-accent-soft hover:underline">SSS&apos;ye git →</Link>
+          <Link href="/sss" className="mt-2 inline-block text-sm text-accent-soft hover:underline">SSS&apos;ye git <ArrowRight size={13} className="inline" /></Link>
         </div>
       </aside>
     </main>

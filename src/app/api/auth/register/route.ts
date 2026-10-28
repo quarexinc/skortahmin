@@ -30,7 +30,7 @@ export const POST = route(async (req) => {
     [email, name, hash, colors[Math.floor(Math.random() * colors.length)]],
   );
   await createSession(row.id, row.token_version);
-  await notify(row.id, 'Skor Çıkartıcı\'ya hoş geldin! 👋', 'Maçlara göz at, skor tahmini yap ve liderlik tablosunda yerini al.', '/maclar');
+  await notify(row.id, 'Skor Çıkartıcı\'ya hoş geldin!', 'Maçlara göz at, skor tahmini yap ve liderlik tablosunda yerini al.', '/maclar');
   await audit(row.id, 'user.register', `user:${row.id}`, { ip: clientIp(req) });
   return { user: toSessionUser(row) };
 });

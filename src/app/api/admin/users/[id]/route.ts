@@ -57,7 +57,7 @@ export const PATCH = route<Ctx>(async (req, { params }) => {
              premium_until = GREATEST(COALESCE(premium_until, NOW()), NOW()) + ($2 || ' months')::interval WHERE id = $1`,
           [id, String(months)],
         );
-      await notify(id, '💎 Premium üyeliğin aktif!', months ? `${months} aylık premium tanımlandı.` : 'Süresiz premium tanımlandı.', '/hesap');
+      await notify(id, 'Premium üyeliğin aktif!', months ? `${months} aylık premium tanımlandı.` : 'Süresiz premium tanımlandı.', '/hesap');
       break;
     }
     case 'revoke_premium':

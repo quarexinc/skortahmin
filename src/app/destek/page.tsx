@@ -1,4 +1,5 @@
 'use client';
+import { LifeBuoy } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -19,7 +20,7 @@ export default function SupportPage() {
     <main className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader title="Destek talepleri" subtitle="Sorularını ve sorunlarını ekibimize ilet, yanıtları buradan takip et." actions={user && <LinkButton href="/destek/yeni">+ Yeni talep</LinkButton>} />
       {!user ? (
-        <Empty icon="🎫" title="Talep açmak için giriş yap">
+        <Empty icon={LifeBuoy} title="Talep açmak için giriş yap">
           Üye değilsen <Link href="/iletisim" className="text-accent-soft underline">iletişim formunu</Link> kullanabilirsin.
           <div className="mt-4 flex justify-center gap-2">
             <LinkButton href="/giris?next=/destek">Giriş yap</LinkButton>
@@ -29,7 +30,7 @@ export default function SupportPage() {
       ) : items == null ? (
         <Spinner />
       ) : items.length === 0 ? (
-        <Empty icon="🎫" title="Henüz destek talebin yok">Bir sorun mu var? <Link href="/destek/yeni" className="text-accent-soft underline">Yeni talep aç</Link> ya da <Link href="/sss" className="text-accent-soft underline">SSS</Link>&apos;ye göz at.</Empty>
+        <Empty icon={LifeBuoy} title="Henüz destek talebin yok">Bir sorun mu var? <Link href="/destek/yeni" className="text-accent-soft underline">Yeni talep aç</Link> ya da <Link href="/sss" className="text-accent-soft underline">SSS</Link>&apos;ye göz at.</Empty>
       ) : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((t) => (

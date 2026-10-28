@@ -1,4 +1,5 @@
 'use client';
+import { LifeBuoy } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -24,13 +25,13 @@ export default function TicketsAdmin() {
           <button key={k} onClick={() => setStatus(k)} className={`chip ${status === k ? 'chip-active' : ''}`}>{l}</button>
         ))}
       </div>
-      {!items ? <Spinner /> : items.length === 0 ? <Empty icon="🎫" title="Talep yok" /> : (
+      {!items ? <Spinner /> : items.length === 0 ? <Empty icon={LifeBuoy} title="Talep yok" /> : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((t) => (
             <Link key={t.id} href={`/admin/destek/${t.id}`} className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition hover:bg-white/5">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">#{t.id} · {t.subject}</p>
-                <p className="truncate text-xs text-slate-500">{t.who} · {t.email} {t.guest && '· ziyaretçi'} {t.premium && '· 💎'} · {CATEGORY_TR[t.category] ?? t.category} · {t.messages} mesaj · {timeAgo(t.updated_at)}</p>
+                <p className="truncate text-xs text-slate-500">{t.who} · {t.email} {t.guest && '· ziyaretçi'} {t.premium && '· Premium'} · {CATEGORY_TR[t.category] ?? t.category} · {t.messages} mesaj · {timeAgo(t.updated_at)}</p>
               </div>
               <Badge color={PRIORITY_TR[t.priority]?.color}>{PRIORITY_TR[t.priority]?.label}</Badge>
               <Badge color={STATUS_TR[t.status]?.color}>{STATUS_TR[t.status]?.label}</Badge>

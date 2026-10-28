@@ -1,4 +1,5 @@
 'use client';
+import { Receipt } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -26,7 +27,7 @@ export default function MyCoupons() {
     <div>
       <PageHeader title="Kuponlarım" actions={<LinkButton href="/kupon" size="sm">+ Yeni kupon</LinkButton>} />
       {items.length === 0 ? (
-        <Empty icon="🧾" title="Kayıtlı kuponun yok"><Link href="/kupon" className="text-accent-soft underline">Kupon oluşturucuyu</Link> dene.</Empty>
+        <Empty icon={Receipt} title="Kayıtlı kuponun yok"><Link href="/kupon" className="text-accent-soft underline">Kupon oluşturucuyu</Link> dene.</Empty>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {items.map((c) => (

@@ -1,4 +1,5 @@
 'use client';
+import { ScrollText } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 import { Empty, PageHeader, Spinner } from '@/components/ui';
@@ -19,7 +20,7 @@ export default function AuditPage() {
     <div>
       <PageHeader title="İşlem kayıtları" subtitle="Son 300 kayıt" />
       <div className="mb-4 flex flex-wrap gap-2">{FILTERS.map(([k, l]) => <button key={k} onClick={() => setF(k)} className={`chip ${f === k ? 'chip-active' : ''}`}>{l}</button>)}</div>
-      {!items ? <Spinner /> : items.length === 0 ? <Empty icon="📜" title="Kayıt yok" /> : (
+      {!items ? <Spinner /> : items.length === 0 ? <Empty icon={ScrollText} title="Kayıt yok" /> : (
         <div className="card overflow-x-auto p-0">
           <table className="w-full min-w-[640px] text-sm">
             <thead><tr className="border-b border-white/5 text-left text-xs uppercase tracking-wider text-slate-500"><th className="px-4 py-3">Zaman</th><th className="px-2 py-3">Kim</th><th className="px-2 py-3">İşlem</th><th className="px-4 py-3">Hedef / ayrıntı</th></tr></thead>

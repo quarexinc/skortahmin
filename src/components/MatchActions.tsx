@@ -1,4 +1,5 @@
 'use client';
+import { Receipt, Share2, Star } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -22,7 +23,7 @@ export default function MatchActions({ data }: { data: AnalysisResponse }) {
     const { data: r, error } = await api<{ on: boolean }>('/api/favorites', { body: { kind, refId, label, logo, extra } });
     if (error || !r) return toast(error ?? 'Hata', 'error');
     setFavs((x) => (r.on ? [...x, { kind, ref_id: refId }] : x.filter((y) => !(y.kind === kind && y.ref_id === refId))));
-    toast(r.on ? `⭐ Favorilere eklendi: ${label}` : 'Favorilerden çıkarıldı', r.on ? 'success' : 'info');
+    toast(r.on ? `Favorilere eklendi: ${label}` : 'Favorilerden çıkarıldı', r.on ? 'success' : 'info');
   };
 
   const share = async () => {
@@ -50,15 +51,15 @@ export default function MatchActions({ data }: { data: AnalysisResponse }) {
         className={btn(has('fixture', f.id))}
         onClick={() => toggle('fixture', f.id, `${f.home?.name} – ${f.away?.name}`, f.league?.logo ?? null, { date: f.date, league: f.league?.name })}
       >
-        {has('fixture', f.id) ? '★' : '☆'} Maçı favorile
+        <Star size={13} fill={has('fixture', f.id) ? 'currentColor' : 'none'} /> Maçı favorile
       </button>
       {[data.home.team, data.away.team].map((t) => (
         <button key={t.id} className={btn(has('team', t.id))} onClick={() => toggle('team', t.id, t.name, t.logo)}>
-          {has('team', t.id) ? '★' : '☆'} {t.name}
+          <Star size={13} fill={has('team', t.id) ? 'currentColor' : 'none'} /> {t.name}
         </button>
       ))}
-      <button className={btn(false)} onClick={share}>↗ Paylaş</button>
-      <Link href="/kupon" className={btn(false)}>🧾 Kuponum</Link>
+      <button className={btn(false)} onClick={share}><Share2 size={13} /> Paylaş</button>
+      <Link href="/kupon" className={btn(false)}><Receipt size={13} /> Kuponum</Link>
     </div>
   );
 }

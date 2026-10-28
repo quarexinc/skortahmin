@@ -1,4 +1,6 @@
 'use client';
+import Countdown from './Countdown';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,9 +15,9 @@ interface Community { total: number; home: number; draw: number; away: number; t
 function Stepper({ value, onChange, disabled }: { value: number; onChange: (n: number) => void; disabled: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <button type="button" disabled={disabled || value >= 15} onClick={() => onChange(value + 1)} className="h-7 w-10 rounded-lg bg-ink-700 text-slate-300 hover:bg-ink-600 disabled:opacity-30" aria-label="Artır">▲</button>
+      <button type="button" disabled={disabled || value >= 15} onClick={() => onChange(value + 1)} className="h-7 w-10 rounded-lg bg-ink-700 text-slate-300 hover:bg-ink-600 disabled:opacity-30" aria-label="Artır"><ChevronUp size={16} className="mx-auto" /></button>
       <span className="w-12 text-center text-4xl font-black tabular-nums">{value}</span>
-      <button type="button" disabled={disabled || value <= 0} onClick={() => onChange(value - 1)} className="h-7 w-10 rounded-lg bg-ink-700 text-slate-300 hover:bg-ink-600 disabled:opacity-30" aria-label="Azalt">▼</button>
+      <button type="button" disabled={disabled || value <= 0} onClick={() => onChange(value - 1)} className="h-7 w-10 rounded-lg bg-ink-700 text-slate-300 hover:bg-ink-600 disabled:opacity-30" aria-label="Azalt"><ChevronDown size={16} className="mx-auto" /></button>
     </div>
   );
 }
@@ -50,7 +52,7 @@ export default function UserPredictionBox({ fixture }: { fixture: LightFixture }
     const { error } = await api('/api/predictions', { body: { fixtureId: fixture.id, home: h, away: a } });
     setBusy(false);
     if (error) return toast(error, 'error');
-    toast(mine ? 'Tahminin güncellendi.' : 'Tahminin kaydedildi! Maç bitince puanın hesaplanacak. 🎯');
+    toast(mine ? 'Tahminin güncellendi.' : 'Tahminin kaydedildi! Maç bitince puanın hesaplanacak.');
     load();
   };
 
@@ -58,7 +60,10 @@ export default function UserPredictionBox({ fixture }: { fixture: LightFixture }
   return (
     <div className="card grid gap-5 p-5 md:grid-cols-[1fr_1fr]">
       <div>
-        <p className="label-muted">Senin tahminin</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="label-muted">Senin tahminin</p>
+          {!started && <Countdown to={fixture.date} label="Tahminler kapanıyor:" />}
+        </div>
         {!user ? (
           <div className="mt-3 text-sm text-slate-400">
             Skor tahmini yapıp liderlik tablosunda yarışmak için{' '}

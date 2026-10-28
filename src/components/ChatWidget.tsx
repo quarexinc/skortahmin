@@ -1,4 +1,5 @@
 'use client';
+import { Headset, MessageCircle, X } from 'lucide-react';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -67,9 +68,9 @@ export default function ChatWidget({ enabled, supportHours }: { enabled: boolean
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="Canlı destek"
-        className="fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl text-ink-950 shadow-xl shadow-accent/20 transition hover:scale-105"
+        className="fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-full bg-accent text-ink-950 shadow-xl shadow-accent/20 transition hover:scale-105"
       >
-        {open ? '✕' : '💬'}
+        {open ? <X size={24} /> : <MessageCircle size={26} />}
         {!open && unread.chat > 0 && (
           <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
             {unread.chat}
@@ -88,7 +89,7 @@ export default function ChatWidget({ enabled, supportHours }: { enabled: boolean
 
           {!user ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-slate-300">
-              <span className="text-3xl">👋</span>
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent/15 text-accent-soft"><Headset size={24} /></span>
               Canlı destekle yazışmak için giriş yapın.
               <div className="flex gap-2">
                 <Link href="/giris" onClick={() => setOpen(false)} className="rounded-xl bg-accent px-4 py-2 font-semibold text-ink-950">

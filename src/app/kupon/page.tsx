@@ -1,4 +1,5 @@
 'use client';
+import { Receipt, X } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -45,7 +46,7 @@ export default function CouponPage() {
       <div>
         <PageHeader title="Kupon oluşturucu" subtitle="Maç sayfalarındaki “+ Kupon” düğmeleriyle seçim ekle; modelin olasılıklarıyla kuponunun toplam olasılığını gör." />
         {picks.length === 0 ? (
-          <Empty icon="🧾" title="Kuponun boş">
+          <Empty icon={Receipt} title="Kuponun boş">
             Bir maç aç ve 1X2{user?.isPremium ? ', KG veya Alt/Üst' : ''} olasılıklarının altındaki “+ Kupon” düğmesine bas.
             <div className="mt-4"><LinkButton href="/maclar">Maçlara git</LinkButton></div>
           </Empty>
@@ -66,7 +67,7 @@ export default function CouponPage() {
                   <p className="font-bold tabular-nums text-accent-soft">{pct(p.prob, 1)}</p>
                   <p className="text-[11px] text-slate-500">oran {(1 / Math.max(p.prob, 0.0001)).toFixed(2)}</p>
                 </div>
-                <button onClick={() => writeCoupon(picks.filter((x) => x !== p))} className="text-slate-500 hover:text-red-300" aria-label="Çıkar">✕</button>
+                <button onClick={() => writeCoupon(picks.filter((x) => x !== p))} className="text-slate-500 hover:text-red-300" aria-label="Çıkar"><X size={18} /></button>
               </div>
             ))}
             <button onClick={() => writeCoupon([])} className="text-sm text-slate-500 hover:text-red-300">Kuponu temizle</button>

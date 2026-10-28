@@ -1,4 +1,5 @@
 'use client';
+import { Megaphone } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
@@ -41,12 +42,12 @@ export default function Announcements() {
       <Card>
         <form onSubmit={create} className="grid gap-4 sm:grid-cols-[1fr_160px]">
           <Field label="Başlık"><Input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} required maxLength={120} /></Field>
-          <Field label="Tür"><Select value={f.level} onChange={(e) => setF({ ...f, level: e.target.value })}><option value="info">📢 Bilgi</option><option value="success">🎉 Müjde</option><option value="warning">⚠️ Uyarı</option></Select></Field>
+          <Field label="Tür"><Select value={f.level} onChange={(e) => setF({ ...f, level: e.target.value })}><option value="info">Bilgi</option><option value="success">Müjde</option><option value="warning">Uyarı</option></Select></Field>
           <div className="sm:col-span-2"><Field label="Metin (isteğe bağlı)"><Input value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} maxLength={400} /></Field></div>
           <div><Button type="submit" loading={busy}>Yayınla</Button></div>
         </form>
       </Card>
-      {!items ? <Spinner /> : items.length === 0 ? <Empty icon="📢" title="Duyuru yok" /> : (
+      {!items ? <Spinner /> : items.length === 0 ? <Empty icon={Megaphone} title="Duyuru yok" /> : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((a) => (
             <div key={a.id} className="flex flex-wrap items-center gap-3 px-5 py-3">

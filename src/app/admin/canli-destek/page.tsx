@@ -1,4 +1,6 @@
 'use client';
+import CannedPicker from '@/components/admin/CannedPicker';
+import { Gem, MessagesSquare } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -64,7 +66,7 @@ function Conversation({ id, onChange }: { id: number; onChange: () => void }) {
       <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
         <div className="min-w-0 flex-1">
           <Link href={`/admin/kullanicilar?q=${chat.user_id}`} className="font-semibold hover:text-violet-200">{chat.name}</Link>
-          <p className="truncate text-xs text-slate-500">{chat.email} · {chat.plan === 'premium' ? '💎 Premium' : 'Ücretsiz'} · üye {fmtDate(chat.user_created)}</p>
+          <p className="truncate text-xs text-slate-500">{chat.email} · {chat.plan === 'premium' ? 'Premium' : 'Ücretsiz'} · üye {fmtDate(chat.user_created)}</p>
         </div>
         {chat.status === 'open' ? (
           <Button size="sm" variant="secondary" onClick={() => setStatus('close')}>Görüşmeyi kapat</Button>
@@ -87,6 +89,7 @@ function Conversation({ id, onChange }: { id: number; onChange: () => void }) {
           {QUICK.map((q) => <button key={q} onClick={() => send(q)} className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-slate-400 hover:text-white">{q.slice(0, 34)}…</button>)}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="flex gap-2">
+          <CannedPicker up onPick={(b) => setText(b)} />
           <input value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder="Yanıt yaz…" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm outline-none focus:border-violet-400/60" />
           <Button type="submit" disabled={!text.trim()}>Gönder</Button>
         </form>
@@ -117,7 +120,7 @@ export default function LiveChatAdmin() {
             <button key={c.id} onClick={() => setSel(c.id)} className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-white/5 ${sel === c.id ? 'bg-violet-500/10' : ''}`}>
               <Avatar name={c.name} color={c.avatar_color} size={32} />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-sm font-semibold"><span className="truncate">{c.name}</span>{c.premium && '💎'}</p>
+                <p className="flex items-center gap-1.5 text-sm font-semibold"><span className="truncate">{c.name}</span>{c.premium && <Gem size={12} className="shrink-0 text-amber-300" />}</p>
                 <p className="truncate text-xs text-slate-500">{c.last_sender === 'admin' ? 'Siz: ' : ''}{c.last_body}</p>
                 <p className="text-[10px] text-slate-600">{timeAgo(c.last_message_at)}</p>
               </div>
@@ -125,7 +128,7 @@ export default function LiveChatAdmin() {
             </button>
           ))}
         </div>
-        {sel ? <Conversation id={sel} onChange={load} /> : <Empty icon="💬" title="Bir görüşme seç">Soldaki listeden yanıtlamak istediğin görüşmeyi aç.</Empty>}
+        {sel ? <Conversation id={sel} onChange={load} /> : <Empty icon={MessagesSquare} title="Bir görüşme seç">Soldaki listeden yanıtlamak istediğin görüşmeyi aç.</Empty>}
       </div>
     </div>
   );

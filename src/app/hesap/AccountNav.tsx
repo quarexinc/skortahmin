@@ -1,17 +1,19 @@
 'use client';
 
+import { Award, Bell, Gem, Home, LifeBuoy, Receipt, Settings, Star, Target } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ITEMS = [
-  { href: '/hesap', label: 'Genel bakış', icon: '🏠' },
-  { href: '/hesap/tahminler', label: 'Tahminlerim', icon: '🎯' },
-  { href: '/hesap/kuponlar', label: 'Kuponlarım', icon: '🧾' },
-  { href: '/hesap/favoriler', label: 'Favorilerim', icon: '⭐' },
-  { href: '/hesap/bildirimler', label: 'Bildirimler', icon: '🔔' },
-  { href: '/destek', label: 'Destek talepleri', icon: '🎫' },
-  { href: '/premium', label: 'Premium', icon: '💎' },
-  { href: '/hesap/profil', label: 'Profil & ayarlar', icon: '⚙️' },
+  { href: '/hesap', label: 'Genel bakış', icon: Home },
+  { href: '/hesap/tahminler', label: 'Tahminlerim', icon: Target },
+  { href: '/hesap/rozetler', label: 'Rozetlerim', icon: Award },
+  { href: '/hesap/kuponlar', label: 'Kuponlarım', icon: Receipt },
+  { href: '/hesap/favoriler', label: 'Favorilerim', icon: Star },
+  { href: '/hesap/bildirimler', label: 'Bildirimler', icon: Bell },
+  { href: '/destek', label: 'Destek talepleri', icon: LifeBuoy },
+  { href: '/premium', label: 'Premium', icon: Gem },
+  { href: '/hesap/profil', label: 'Profil & ayarlar', icon: Settings },
 ];
 
 export default function AccountNav() {
@@ -28,7 +30,7 @@ export default function AccountNav() {
               active ? 'bg-accent/15 text-accent-soft' : 'text-slate-400 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <span aria-hidden>{i.icon}</span>
+            <i.icon size={17} aria-hidden />
             {i.label}
           </Link>
         );

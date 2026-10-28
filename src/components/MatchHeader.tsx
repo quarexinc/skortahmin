@@ -1,3 +1,4 @@
+import { MapPin } from 'lucide-react';
 import { fmtMatchDateTime } from '@/lib/format';
 import type { AnalysisResponse } from '@/lib/types';
 import TeamLogo from './TeamLogo';
@@ -43,7 +44,7 @@ export default function MatchHeader({ data }: { data: AnalysisResponse }) {
             <p className="text-4xl font-black text-slate-600">VS</p>
           )}
           {data.home.profile?.venue && (
-            <p className="mt-2 max-w-[14rem] truncate text-xs text-slate-500">📍 {data.home.profile.venue}</p>
+            <p className="mt-2 max-w-[14rem] truncate flex items-center gap-1 text-xs text-slate-500"><MapPin size={12} className="shrink-0" /> <span className="truncate">{data.home.profile.venue}</span></p>
           )}
         </div>
 

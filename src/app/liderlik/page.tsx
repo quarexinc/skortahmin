@@ -1,4 +1,7 @@
 'use client';
+import Link from 'next/link';
+import AdSlot from '@/components/AdSlot';
+import { Gem, Medal, Trophy } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 import { Avatar, Empty, LinkButton, PageHeader, Spinner } from '@/components/ui';
@@ -28,17 +31,18 @@ export default function Leaderboard() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader title="Liderlik tablosu" subtitle="Tam skor 3 puan, doğru sonuç 1 puan. Eşitlikte tam skor sayısı, sonra daha az tahmin öne geçer." />
+      <AdSlot placement="leaderboard_side" className="mb-5" />
       <div className="mb-4 flex gap-2">
         {PERIODS.map((p) => (
           <button key={p.id} onClick={() => setPeriod(p.id)} className={`chip ${period === p.id ? 'chip-active' : ''}`}>{p.label}</button>
         ))}
       </div>
       {err ? (
-        <Empty icon="🏆" title="Liderlik tablosu şu anda kullanılamıyor">{err}</Empty>
+        <Empty icon={Trophy} title="Liderlik tablosu şu anda kullanılamıyor">{err}</Empty>
       ) : rows == null ? (
         <Spinner />
       ) : rows.length === 0 ? (
-        <Empty icon="🏆" title="Bu dönemde sonuçlanmış tahmin yok">
+        <Empty icon={Trophy} title="Bu dönemde sonuçlanmış tahmin yok">
           Maçlar bittikçe puanlar burada görünecek.
           <div className="mt-4"><LinkButton href="/maclar">Tahmin yap</LinkButton></div>
         </Empty>
@@ -50,9 +54,9 @@ export default function Leaderboard() {
                 const r = rows[i];
                 return (
                   <div key={r.id} className={`card flex flex-col items-center p-4 text-center ${i === 0 ? 'border-amber-400/40 pb-7' : ''}`}>
-                    <span className="text-2xl">{['🥇', '🥈', '🥉'][i]}</span>
+                    <Medal size={26} className={['text-amber-300', 'text-slate-300', 'text-orange-400'][i]} />
                     <div className="mt-2"><Avatar name={r.name} color={r.avatar_color} size={i === 0 ? 56 : 44} /></div>
-                    <p className="mt-2 w-full truncate text-sm font-semibold">{r.name}</p>
+                    <Link href={`/uye/${r.id}`} className="mt-2 w-full truncate text-sm font-semibold hover:text-accent-soft">{r.name}</Link>
                     <p className="text-lg font-black text-accent-soft">{r.points} p</p>
                   </div>
                 );
@@ -79,8 +83,8 @@ export default function Leaderboard() {
                       <div className="flex items-center gap-2.5">
                         <Avatar name={r.name} color={r.avatar_color} size={28} />
                         <div className="min-w-0">
-                          <p className="truncate font-medium">{r.name} {r.premium && '💎'} {r.id === meId && <span className="text-xs text-accent-soft">(sen)</span>}</p>
-                          {r.favorite_team && <p className="truncate text-xs text-slate-500">❤️ {r.favorite_team}</p>}
+                          <p className="truncate font-medium"><Link href={`/uye/${r.id}`} className="hover:text-accent-soft">{r.name}</Link> {r.premium && <Gem size={12} className="inline text-amber-300" />} {r.id === meId && <span className="text-xs text-accent-soft">(sen)</span>}</p>
+                          {r.favorite_team && <p className="truncate text-xs text-slate-500">{r.favorite_team}</p>}
                         </div>
                       </div>
                     </td>

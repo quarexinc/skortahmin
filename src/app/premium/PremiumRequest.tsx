@@ -33,7 +33,7 @@ export default function PremiumRequest({ priceText, paymentInfo, loggedIn, isPre
   if (isPremium)
     return (
       <Notice kind="success">
-        💎 Premium üyeliğin aktif{premiumUntil ? ` (${fmtDate(premiumUntil)} tarihine kadar)` : ''}. Tüm analizlerin keyfini çıkar!
+        Premium üyeliğin aktif{premiumUntil ? ` (${fmtDate(premiumUntil)} tarihine kadar)` : ''}. Tüm analizlerin keyfini çıkar!
       </Notice>
     );
 

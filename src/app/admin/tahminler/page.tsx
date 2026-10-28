@@ -1,4 +1,5 @@
 'use client';
+import { Target } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -30,7 +31,7 @@ export default function PredictionsAdmin() {
         subtitle="Puanlama, kullanıcılar tahminlerine veya liderlik tablosuna baktıkça otomatik çalışır. Gerekirse buradan elle tetikleyebilirsin (maç başına 1 API isteği)."
         actions={<Button onClick={score} loading={busy}>Bekleyenleri şimdi puanla</Button>}
       />
-      {!items ? <Spinner /> : items.length === 0 ? <Empty icon="🎯" title="Henüz tahmin yok" /> : (
+      {!items ? <Spinner /> : items.length === 0 ? <Empty icon={Target} title="Henüz tahmin yok" /> : (
         <div className="card overflow-x-auto p-0">
           <table className="w-full min-w-[560px] text-sm">
             <thead><tr className="border-b border-white/5 text-left text-xs uppercase tracking-wider text-slate-500"><th className="px-4 py-3">Maç</th><th className="px-2 py-3">Tarih</th><th className="px-2 py-3 text-right">Tahmin</th><th className="px-2 py-3 text-center">Sonuç</th><th className="px-4 py-3">Durum</th></tr></thead>

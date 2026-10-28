@@ -1,4 +1,5 @@
 'use client';
+import { MessageSquare } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -33,7 +34,7 @@ export default function CommentsAdmin() {
       <div className="mb-4 flex gap-2">
         {[['flagged', 'Şikâyetli / gizli'], ['all', 'Tümü']].map(([k, l]) => <button key={k} onClick={() => setFilter(k)} className={`chip ${filter === k ? 'chip-active' : ''}`}>{l}</button>)}
       </div>
-      {!items ? <Spinner /> : items.length === 0 ? <Empty icon="🗨️" title="İncelenecek yorum yok" /> : (
+      {!items ? <Spinner /> : items.length === 0 ? <Empty icon={MessageSquare} title="İncelenecek yorum yok" /> : (
         <div className="card divide-y divide-white/5 p-0">
           {items.map((c) => (
             <div key={c.id} className="px-5 py-4">

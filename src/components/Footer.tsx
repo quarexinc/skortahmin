@@ -1,4 +1,10 @@
+import { Mail } from 'lucide-react';
 import Link from 'next/link';
+import AdSlot from './AdSlot';
+import { Logo } from './Logo';
+import NewsletterForm from './NewsletterForm';
+import { dbConfigured, q } from '@/lib/db';
+import { getSettings } from '@/lib/settings';
 
 const COLS = [
   {
@@ -7,6 +13,7 @@ const COLS = [
       { href: '/maclar', label: 'Maç programı' },
       { href: '/liderlik', label: 'Liderlik tablosu' },
       { href: '/kupon', label: 'Kupon oluşturucu' },
+      { href: '/blog', label: 'Blog' },
       { href: '/premium', label: 'Premium üyelik' },
     ],
   },
@@ -31,48 +38,58 @@ const COLS = [
   },
 ];
 
-export default function Footer() {
+export default async function Footer() {
+  const s = await getSettings();
+  const pages = dbConfigured()
+    ? await q<{ slug: string; title: string }>('SELECT slug, title FROM pages WHERE published AND show_in_footer ORDER BY title').catch(() => [])
+    : [];
+  const cols = COLS.map((c) => (c.title === 'Kurumsal' ? { ...c, links: [...c.links, ...pages.map((p) => ({ href: `/sayfa/${p.slug}`, label: p.title }))] } : c));
   return (
-    <footer className="mt-16 border-t border-white/5 bg-ink-900/60">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-accent/15">⚽</span>
-            <span className="font-black">
-              Skor <span className="text-accent-soft">Çıkartıcı</span>
-            </span>
-          </Link>
-          <p className="mt-3 text-sm leading-relaxed text-slate-400">
-            Gerçek maç verileri ve Poisson modeliyle şeffaf futbol analizi. Tüm sayılar API-Football&apos;dan çalışma
-            anında gelir.
-          </p>
-        </div>
-        {COLS.map((c) => (
-          <div key={c.title}>
-            <p className="label-muted mb-3">{c.title}</p>
-            <ul className="space-y-2">
-              {c.links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-sm text-slate-400 transition hover:text-white">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+    <>
+      <div className="mx-auto mt-12 w-full max-w-6xl px-4">
+        <AdSlot placement="footer_top" />
       </div>
-      <div className="border-t border-white/5">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-[11px] text-slate-500">
-          <span>© {new Date().getFullYear()} Skor Çıkartıcı · Veri kaynağı: API-Football v3</span>
-          <span>
-            18+ · Tahminler matematiksel olasılıklardır; garanti sonuç değildir.{' '}
-            <Link href="/sorumlu-oyun" className="underline hover:text-slate-300">
-              Sorumlu oyun
+      <footer className="mt-12 border-t border-white/5 bg-ink-900/60">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div>
+            <Link href="/" aria-label="Ana sayfa">
+              <Logo size={30} />
             </Link>
-          </span>
+            <p className="mt-3 text-sm leading-relaxed text-slate-400">
+              Gerçek maç verileri ve Poisson modeliyle şeffaf futbol analizi. Tüm sayılar API-Football&apos;dan çalışma anında gelir.
+            </p>
+            {s.newsletterEnabled && dbConfigured() && (
+              <div className="mt-5">
+                <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><Mail size={15} /> Haftalık bülten</p>
+                <NewsletterForm compact />
+              </div>
+            )}
+          </div>
+          {cols.map((c) => (
+            <div key={c.title}>
+              <p className="label-muted mb-3">{c.title}</p>
+              <ul className="space-y-2">
+                {c.links.map((l) => (
+                  <li key={l.href}>
+                    <Link href={l.href} className="text-sm text-slate-400 transition hover:text-white">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-      </div>
-    </footer>
+        <div className="border-t border-white/5">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-[11px] text-slate-500">
+            <span>© {new Date().getFullYear()} Skor Çıkartıcı · Veri kaynağı: API-Football v3</span>
+            <span>
+              18+ · Tahminler matematiksel olasılıklardır; garanti sonuç değildir.{' '}
+              <Link href="/sorumlu-oyun" className="underline hover:text-slate-300">Sorumlu oyun</Link>
+            </span>
+          </div>
+        </div>
+      </footer>
+    </>
   );
 }

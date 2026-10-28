@@ -1,4 +1,7 @@
 'use client';
+import BadgeGrid from '@/components/BadgeGrid';
+import type { EarnedBadge } from '@/config/badges';
+import { Gem, LayoutDashboard, LifeBuoy, Receipt, Target } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -10,6 +13,24 @@ interface Summary {
   stats: Record<string, number>;
   rank: number | null;
   premiumRequest: { status: string; months: number; created_at: string } | null;
+}
+
+function BadgesStrip() {
+  const [b, setB] = useState<EarnedBadge[] | null>(null);
+  useEffect(() => {
+    api<{ badges: EarnedBadge[] }>('/api/badges').then((r) => setB(r.data?.badges ?? []));
+  }, []);
+  if (!b) return null;
+  const earned = b.filter((x) => x.earned);
+  return (
+    <Card>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="font-bold">Rozetler <span className="text-sm font-normal text-slate-500">{earned.length}/{b.length}</span></p>
+        <Link href="/hesap/rozetler" className="text-sm text-accent-soft hover:underline">Tümü</Link>
+      </div>
+      {earned.length ? <BadgeGrid badges={earned} compact showLocked={false} /> : <p className="text-sm text-slate-400">İlk tahminini yaparak ilk rozetini kazan.</p>}
+    </Card>
+  );
 }
 
 export default function AccountHome() {
@@ -41,15 +62,15 @@ export default function AccountHome() {
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-black">Merhaba, {user.name.split(' ')[0]}!</h1>
           <p className="text-sm text-slate-400">
-            Üyelik: {fmtDate(user.createdAt)} · {user.favoriteTeam ? `❤️ ${user.favoriteTeam}` : 'Takımını profilinden ekleyebilirsin'}
+            Üyelik: {fmtDate(user.createdAt)} · {user.favoriteTeam ? `Takımı: ${user.favoriteTeam}` : 'Takımını profilinden ekleyebilirsin'}
           </p>
         </div>
         {user.isAdmin ? (
-          <Link href="/admin" className="rounded-xl bg-violet-500/15 px-4 py-2 text-sm font-semibold text-violet-300">🛡️ Yönetim paneli</Link>
+          <Link href="/admin" className="inline-flex items-center gap-2 rounded-xl bg-violet-500/15 px-4 py-2 text-sm font-semibold text-violet-300"><LayoutDashboard size={16} /> Yönetim paneli</Link>
         ) : user.isPremium ? (
-          <Badge color="amber">💎 Premium{user.premiumUntil ? ` · ${fmtDate(user.premiumUntil)} tarihine kadar` : ''}</Badge>
+          <Badge color="amber"><Gem size={12} /> Premium{user.premiumUntil ? ` · ${fmtDate(user.premiumUntil)} tarihine kadar` : ''}</Badge>
         ) : (
-          <Link href="/premium" className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-ink-950">💎 Premium&apos;a geç</Link>
+          <Link href="/premium" className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-ink-950"><Gem size={16} /> Premium&apos;a geç</Link>
         )}
       </Card>
 
@@ -71,14 +92,16 @@ export default function AccountHome() {
         ))}
       </div>
 
+      <BadgesStrip />
+
       <div className="grid gap-3 sm:grid-cols-3">
         {[
-          { href: '/maclar', icon: '⚽', t: 'Tahmin yap', d: 'Bugünün maçlarına skor tahmini gir.' },
-          { href: '/kupon', icon: '🧾', t: 'Kupon oluştur', d: 'Model olasılıklarıyla kupon hazırla.' },
-          { href: '/destek/yeni', icon: '🎫', t: 'Destek talebi aç', d: 'Sorununu ekibimize ilet.' },
+          { href: '/maclar', icon: Target, t: 'Tahmin yap', d: 'Bugünün maçlarına skor tahmini gir.' },
+          { href: '/kupon', icon: Receipt, t: 'Kupon oluştur', d: 'Model olasılıklarıyla kupon hazırla.' },
+          { href: '/destek/yeni', icon: LifeBuoy, t: 'Destek talebi aç', d: 'Sorununu ekibimize ilet.' },
         ].map((x) => (
           <Link key={x.href} href={x.href} className="card p-4 transition hover:border-accent/30">
-            <span className="text-2xl">{x.icon}</span>
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/15 text-accent-soft"><x.icon size={20} /></span>
             <p className="mt-2 font-semibold">{x.t}</p>
             <p className="text-sm text-slate-400">{x.d}</p>
           </Link>

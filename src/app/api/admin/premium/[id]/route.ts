@@ -23,7 +23,7 @@ export const PATCH = route<{ params: { id: string } }>(async (req, { params }) =
       `UPDATE users SET plan = 'premium', premium_until = GREATEST(COALESCE(premium_until, NOW()), NOW()) + ($2 || ' months')::interval WHERE id = $1`,
       [r.user_id, String(months)],
     );
-    await notify(r.user_id, '💎 Premium üyeliğin aktifleştirildi!', `${months} aylık premium tanımlandı. Keyifli analizler!`, '/hesap');
+    await notify(r.user_id, 'Premium üyeliğin aktifleştirildi!', `${months} aylık premium tanımlandı. Keyifli analizler!`, '/hesap');
   } else {
     await notify(r.user_id, 'Premium talebin sonuçlandı', note ?? 'Talebin onaylanmadı. Ayrıntılar için destek ekibimizle iletişime geçebilirsin.', '/premium');
   }

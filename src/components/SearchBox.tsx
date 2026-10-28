@@ -1,4 +1,5 @@
 'use client';
+import { Search, X } from 'lucide-react';
 
 interface SearchBoxProps {
   value: string;
@@ -9,7 +10,7 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
   return (
     <div className="relative">
       <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-        🔍
+        <Search size={16} />
       </span>
       <input
         type="text"
@@ -25,7 +26,7 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
           aria-label="Aramayı temizle"
           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
         >
-          ✕
+          <X size={16} />
         </button>
       )}
     </div>

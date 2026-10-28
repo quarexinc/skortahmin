@@ -1,4 +1,5 @@
 'use client';
+import { Activity, Ban, BellRing, Flag, Gem, Hourglass, Image, LifeBuoy, LineChart, Megaphone, MessagesSquare, PenSquare, Receipt, Target, TicketPercent, Timer, UserPlus, Users, type LucideIcon } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -21,28 +22,42 @@ export default function Dashboard() {
   if (err) return <p className="text-red-300">{err}</p>;
   if (!d) return <Spinner />;
   const c = d.counts;
-  const tiles: [string, number | string, string, string?][] = [
-    ['Toplam üye', c.users, '/admin/kullanicilar', `+${c.users_week} bu hafta`],
-    ['Bugün yeni üye', c.users_today, '/admin/kullanicilar'],
-    ['Bugün aktif', c.active_today, '/admin/kullanicilar'],
-    ['Aktif premium', c.premium, '/admin/kullanicilar?filter=premium'],
-    ['Bekleyen premium', c.premium_pending, '/admin/premium'],
-    ['Açık destek talebi', c.tickets_open, '/admin/destek', `${c.tickets_active} aktif`],
-    ['Okunmamış canlı mesaj', c.chat_unread, '/admin/canli-destek', `${c.chats_open} açık görüşme`],
-    ['İşaretli yorum', c.comments_flagged, '/admin/yorumlar', `${c.comments_today} yorum bugün`],
-    ['Toplam tahmin', c.predictions, '/admin/tahminler', `${c.predictions_today} bugün`],
-    ['Puanlanmayı bekleyen', c.predictions_unscored, '/admin/tahminler'],
-    ['Kayıtlı kupon', c.coupons, '/admin'],
-    ['Askıdaki hesap', c.banned, '/admin/kullanicilar?filter=banned'],
+  const tiles: [string, number | string, string, LucideIcon, string?][] = [
+    ['Toplam üye', c.users, '/admin/kullanicilar', Users, `+${c.users_week} bu hafta`],
+    ['Bugün yeni üye', c.users_today, '/admin/kullanicilar', UserPlus],
+    ['Bugün aktif', c.active_today, '/admin/kullanicilar', Activity],
+    ['Aktif premium', c.premium, '/admin/kullanicilar?filter=premium', Gem],
+    ['Bekleyen premium', c.premium_pending, '/admin/premium', Hourglass],
+    ['Açık destek talebi', c.tickets_open, '/admin/destek', LifeBuoy, `${c.tickets_active} aktif`],
+    ['Okunmamış canlı mesaj', c.chat_unread, '/admin/canli-destek', MessagesSquare, `${c.chats_open} açık görüşme`],
+    ['İşaretli yorum', c.comments_flagged, '/admin/yorumlar', Flag, `${c.comments_today} yorum bugün`],
+    ['Toplam tahmin', c.predictions, '/admin/tahminler', Target, `${c.predictions_today} bugün`],
+    ['Puanlanmayı bekleyen', c.predictions_unscored, '/admin/tahminler', Timer],
+    ['Kayıtlı kupon', c.coupons, '/admin', Receipt],
+    ['Askıdaki hesap', c.banned, '/admin/kullanicilar?filter=banned', Ban],
   ];
   const max = Math.max(1, ...d.signups.map((s) => s.n));
   return (
     <div className="space-y-6">
       <PageHeader title="Gösterge paneli" subtitle="Sitenin genel durumu" />
+      <div className="flex flex-wrap gap-2">
+        {[
+          { href: '/admin/reklamlar', label: 'Reklam ekle', icon: Image },
+          { href: '/admin/blog', label: 'Yazı yaz', icon: PenSquare },
+          { href: '/admin/promosyon', label: 'Promosyon kodu', icon: TicketPercent },
+          { href: '/admin/duyurular', label: 'Duyuru yayınla', icon: Megaphone },
+          { href: '/admin/bildirim', label: 'Bildirim gönder', icon: BellRing },
+          { href: '/admin/analitik', label: 'Analitik', icon: LineChart },
+        ].map((a) => (
+          <Link key={a.href} href={a.href} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-ink-800 px-3.5 py-2 text-sm font-medium text-slate-300 transition hover:border-violet-400/40 hover:text-white">
+            <a.icon size={15} /> {a.label}
+          </Link>
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {tiles.map(([label, v, href, sub]) => (
+        {tiles.map(([label, v, href, Icon, sub]) => (
           <Link key={label} href={href} className="card p-4 transition hover:border-violet-400/30">
-            <p className="text-xs text-slate-500">{label}</p>
+            <p className="flex items-center gap-1.5 text-xs text-slate-500"><Icon size={14} /> {label}</p>
             <p className="mt-1 text-2xl font-black tabular-nums">{v}</p>
             {sub && <p className="text-[11px] text-slate-500">{sub}</p>}
           </Link>
@@ -75,7 +90,7 @@ export default function Dashboard() {
         <Card>
           <p className="label-muted mb-3">Aktif destek talepleri</p>
           {d.latestTickets.length === 0 ? (
-            <p className="text-sm text-slate-500">Açık talep yok 🎉</p>
+            <p className="text-sm text-slate-500">Açık talep yok.</p>
           ) : (
             <ul className="divide-y divide-white/5 text-sm">
               {d.latestTickets.map((t) => (

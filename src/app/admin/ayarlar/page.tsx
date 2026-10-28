@@ -49,8 +49,15 @@ export default function SettingsAdmin() {
         <Toggle label="Yeni üye kaydı" desc="Kapalıyken kayıt formu yeni hesap oluşturmaz." value={!!s.registrationsOpen} onChange={set('registrationsOpen')} />
         <Toggle label="Maç yorumları" desc="Kapalıyken yeni yorum yapılamaz; mevcutlar görünmeye devam eder." value={!!s.commentsEnabled} onChange={set('commentsEnabled')} />
         <Toggle label="Canlı destek" desc="Sağ alttaki canlı destek balonunu gösterir." value={!!s.liveChatEnabled} onChange={set('liveChatEnabled')} />
+        <Toggle label="Reklamlar" desc="Reklam bannerlarını sitede gösterir." value={!!s.adsEnabled} onChange={set('adsEnabled')} />
+        <Toggle label="Premium üyelere reklam gösterme" desc="Premium üyeler ve yöneticiler reklam görmez." value={!!s.hideAdsForPremium} onChange={set('hideAdsForPremium')} />
+        <Toggle label="Blog" desc="Blog menüsünü ve yazıları gösterir." value={!!s.blogEnabled} onChange={set('blogEnabled')} />
+        <Toggle label="Bülten aboneliği" desc="Açılış sayfası ve alt bilgide bülten formunu gösterir." value={!!s.newsletterEnabled} onChange={set('newsletterEnabled')} />
+        <Toggle label="Çerez bildirimi" desc="İlk ziyarette çerez/yerel depolama bilgilendirmesi gösterir." value={!!s.cookieBanner} onChange={set('cookieBanner')} />
       </Card>
       <Card className="space-y-4">
+        <Field label="Açılış sayfası başlığı" hint="İçinde “sayılarla” geçerse o kelime animasyonlu döner."><Input value={String(s.heroTitle)} onChange={(e) => set('heroTitle')(e.target.value)} /></Field>
+        <Field label="Açılış sayfası alt başlığı"><Textarea rows={2} value={String(s.heroSubtitle)} onChange={(e) => set('heroSubtitle')(e.target.value)} /></Field>
         <Field label="Bakım mesajı"><Textarea rows={2} value={String(s.maintenanceMessage)} onChange={(e) => set('maintenanceMessage')(e.target.value)} /></Field>
         <Field label="Destek çalışma saatleri"><Input value={String(s.supportHours)} onChange={(e) => set('supportHours')(e.target.value)} /></Field>
         <div className="grid gap-4 sm:grid-cols-2">

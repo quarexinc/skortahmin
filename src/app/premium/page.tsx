@@ -1,3 +1,5 @@
+import PromoRedeem from './PromoRedeem';
+import { Check, Gem, Minus } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getUser } from '@/lib/auth';
 import { getSettings } from '@/lib/settings';
@@ -23,11 +25,11 @@ const ROWS: [string, boolean | string, boolean | string][] = [
 export default async function Page() {
   const [user, s] = await Promise.all([getUser(), getSettings()]);
   const cell = (v: boolean | string) =>
-    v === true ? <span className="text-accent-soft">✓</span> : v === false ? <span className="text-slate-600">—</span> : <span className="text-slate-300">{v === 'limitli' ? `${s.freeCouponLimit} adet` : v}</span>;
+    v === true ? <Check size={18} className="mx-auto text-accent-soft" /> : v === false ? <Minus size={16} className="mx-auto text-slate-600" /> : <span className="text-slate-300">{v === 'limitli' ? `${s.freeCouponLimit} adet` : v}</span>;
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
       <div className="text-center">
-        <span className="text-4xl">💎</span>
+        <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-400/15 text-amber-300"><Gem size={28} /></span>
         <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Premium ile analizin tamamı</h1>
         <p className="mx-auto mt-3 max-w-xl text-slate-400">
           Skor matrisi, KG ve Alt/Üst olasılıkları, modelin tüm girdileri ve sınırsız kupon. {s.premiumPriceText}.
@@ -55,7 +57,8 @@ export default async function Page() {
         </table>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-6">
+        <PromoRedeem />
         <PremiumRequest priceText={s.premiumPriceText} paymentInfo={s.premiumPaymentInfo} loggedIn={!!user} isPremium={!!user?.isPremium} premiumUntil={user?.premiumUntil ?? null} />
       </div>
     </main>

@@ -1,4 +1,5 @@
 'use client';
+import { AlertTriangle, Megaphone, PartyPopper, X } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 
@@ -14,7 +15,7 @@ const STYLE = {
   success: 'border-accent/20 bg-accent/10 text-accent-soft',
   warning: 'border-amber-500/20 bg-amber-500/10 text-amber-100',
 };
-const ICON = { info: '📢', success: '🎉', warning: '⚠️' };
+const ICON = { info: Megaphone, success: PartyPopper, warning: AlertTriangle };
 const KEY = 'skor_dismissed_ann';
 
 export default function AnnouncementBar({ items }: { items: Item[] }) {
@@ -47,13 +48,16 @@ export default function AnnouncementBar({ items }: { items: Item[] }) {
       {visible.map((a) => (
         <div key={a.id} className={`border-b ${STYLE[a.level] ?? STYLE.info}`}>
           <div className="mx-auto flex max-w-6xl items-start gap-3 px-4 py-2 text-sm">
-            <span aria-hidden>{ICON[a.level] ?? '📢'}</span>
+            {(() => {
+              const I = ICON[a.level] ?? Megaphone;
+              return <I size={16} className="mt-0.5 shrink-0" aria-hidden />;
+            })()}
             <p className="min-w-0 flex-1">
               <span className="font-semibold">{a.title}</span>
               {a.body && <span className="opacity-80"> — {a.body}</span>}
             </p>
             <button onClick={() => close(a.id)} aria-label="Duyuruyu kapat" className="opacity-60 hover:opacity-100">
-              ✕
+              <X size={16} />
             </button>
           </div>
         </div>

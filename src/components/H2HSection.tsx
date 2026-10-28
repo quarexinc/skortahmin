@@ -1,3 +1,4 @@
+import { GitCompareArrows } from 'lucide-react';
 import { fmtDateShort, num1, pct1 } from '@/lib/format';
 import type { AnalysisResponse } from '@/lib/types';
 import EmptyState from './EmptyState';
@@ -22,7 +23,7 @@ export default function H2HSection({ data }: { data: AnalysisResponse }) {
 
   if (h.total === 0) {
     return (
-      <EmptyState icon="🆚" title="Bu iki takımın kayıtlarda geçmiş karşılaşması bulunamadı">
+      <EmptyState icon={GitCompareArrows} title="Bu iki takımın kayıtlarda geçmiş karşılaşması bulunamadı">
         Tahmin modelinde H2H ağırlığı otomatik olarak 0&apos;a çekilir.
       </EmptyState>
     );

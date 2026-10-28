@@ -1,4 +1,5 @@
 'use client';
+import { Star } from 'lucide-react';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -25,9 +26,9 @@ export default function Favorites() {
   const fixtures = items.filter((i) => i.kind === 'fixture');
   return (
     <div className="space-y-8">
-      <PageHeader title="Favorilerim" subtitle="Maç sayfalarındaki ☆ düğmeleriyle takım ve maç ekleyebilirsin." />
+      <PageHeader title="Favorilerim" subtitle="Maç sayfalarındaki yıldız düğmeleriyle takım ve maç ekleyebilirsin." />
       {items.length === 0 && (
-        <Empty icon="⭐" title="Henüz favorin yok">
+        <Empty icon={Star} title="Henüz favorin yok">
           <div className="mt-2"><LinkButton href="/maclar">Maçlara göz at</LinkButton></div>
         </Empty>
       )}
@@ -39,7 +40,7 @@ export default function Favorites() {
               <div key={t.ref_id} className="card flex items-center gap-3 p-4">
                 {t.logo && <img src={t.logo} alt="" className="h-8 w-8 object-contain" />}
                 <span className="flex-1 truncate font-semibold">{t.label}</span>
-                <button onClick={() => remove(t)} className="text-amber-300" title="Favorilerden çıkar">★</button>
+                <button onClick={() => remove(t)} className="text-amber-300" title="Favorilerden çıkar"><Star size={18} fill="currentColor" /></button>
               </div>
             ))}
           </div>
@@ -57,7 +58,7 @@ export default function Favorites() {
                   <p className="truncate font-medium">{f.label}</p>
                   <p className="text-xs text-slate-500">{f.extra?.league} · {fmtDateTime(f.extra?.date)}</p>
                 </Link>
-                <button onClick={() => remove(f)} className="text-amber-300" title="Favorilerden çıkar">★</button>
+                <button onClick={() => remove(f)} className="text-amber-300" title="Favorilerden çıkar"><Star size={18} fill="currentColor" /></button>
               </div>
             ))}
           </div>

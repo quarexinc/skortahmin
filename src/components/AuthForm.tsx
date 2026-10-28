@@ -43,7 +43,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     if (error || !data) return setError(error);
     setUser(data.user);
     await refresh();
-    toast(mode === 'login' ? `Tekrar hoş geldin, ${data.user.name.split(' ')[0]}!` : 'Hesabın oluşturuldu. Hoş geldin! 🎉');
+    toast(mode === 'login' ? `Tekrar hoş geldin, ${data.user.name.split(' ')[0]}!` : 'Hesabın oluşturuldu. Hoş geldin!');
     router.push(data.user.isAdmin && mode === 'login' && !params.get('next') ? '/admin' : next);
     router.refresh();
   };

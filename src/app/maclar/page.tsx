@@ -1,9 +1,11 @@
 'use client';
+import { CheckCircle2, Clock, ListFilter, Radio, Star } from 'lucide-react';
+import AdSlot from '@/components/AdSlot';
 
 // ---------------------------------------------------------------------------
 // Ana Sayfa — bugünden itibaren 10 günün maçları (gerçek API verisi).
 // ---------------------------------------------------------------------------
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Alert from '@/components/Alert';
 import DateStrip from '@/components/DateStrip';
 import FixtureCard from '@/components/FixtureCard';
@@ -11,7 +13,9 @@ import LeagueFilter from '@/components/LeagueFilter';
 import SearchBox from '@/components/SearchBox';
 import Skeleton from '@/components/Skeleton';
 import { currentSeason, DAYS_AHEAD, istDateKey, seasonLabel } from '@/config';
-import { fmtDayLong, fmtDateShort, fmtWeekday, trApiError } from '@/lib/format';
+import { fmtDayLong, fmtDateShort, fmtWeekday, LIVE_STATUSES, trApiError } from '@/lib/format';
+import { useAuth } from '@/components/AuthProvider';
+import { api } from '@/lib/client';
 import type { LightFixture } from '@/lib/types';
 
 interface DayState {
@@ -91,6 +95,14 @@ export default function HomePage() {
     [dates, days, selected],
   );
 
+  const { user } = useAuth();
+  const [favTeams, setFavTeams] = useState<number[]>([]);
+  const [onlyFav, setOnlyFav] = useState(false);
+  const [status, setStatus] = useState<'all' | 'upcoming' | 'live' | 'finished'>('all');
+  useEffect(() => {
+    if (user) api<{ items: { kind: string; ref_id: number }[] }>('/api/favorites').then((r) => setFavTeams((r.data?.items ?? []).filter((x) => x.kind === 'team').map((x) => x.ref_id)));
+  }, [user]);
+
   const day = days[selected];
   const visible = useMemo(() => {
     const list = day?.fixtures ?? [];
@@ -98,6 +110,11 @@ export default function HomePage() {
     return list
       .filter((f) => {
         if (league !== 0 && f.league?.id !== league) return false;
+        if (onlyFav && !favTeams.includes(f.home?.id ?? -1) && !favTeams.includes(f.away?.id ?? -1)) return false;
+        const st = f.status.short;
+        if (status === 'live' && !LIVE_STATUSES.has(st)) return false;
+        if (status === 'finished' && !['FT', 'AET', 'PEN'].includes(st)) return false;
+        if (status === 'upcoming' && !['NS', 'TBD'].includes(st)) return false;
         if (q) {
           const hn = (f.home?.name ?? '').toLocaleLowerCase('tr-TR');
           const an = (f.away?.name ?? '').toLocaleLowerCase('tr-TR');
@@ -106,7 +123,7 @@ export default function HomePage() {
         return true;
       })
       .sort((a, b) => a.date.localeCompare(b.date));
-  }, [day?.fixtures, league, query]);
+  }, [day?.fixtures, league, query, onlyFav, favTeams, status]);
 
   return (
     <>
@@ -115,11 +132,27 @@ export default function HomePage() {
           <h1 className="text-2xl font-black tracking-tight">Maç programı</h1>
           <p className="mt-1 text-sm text-slate-400">Bugün ve önümüzdeki günlerin maçları · Analiz için maça dokun · Mevcut sezon: {seasonLabel(currentSeason())}</p>
         </div>
+        <AdSlot placement="matches_top" className="mb-5" />
         <DateStrip days={dayMeta} onSelect={selectDay} />
 
         <div className="mt-4 space-y-3">
           <LeagueFilter value={league} onChange={setLeague} />
           <SearchBox value={query} onChange={setQuery} />
+          <div className="flex flex-wrap gap-2">
+            {([
+              ['all', 'Tümü', ListFilter],
+              ['upcoming', 'Başlamamış', Clock],
+              ['live', 'Canlı', Radio],
+              ['finished', 'Biten', CheckCircle2],
+            ] as const).map(([k, l, I]) => (
+              <button key={k} onClick={() => setStatus(k)} className={`chip ${status === k ? 'chip-active' : ''}`}><I size={14} /> {l}</button>
+            ))}
+            {user && (
+              <button onClick={() => setOnlyFav((v) => !v)} className={`chip ${onlyFav ? 'chip-active' : ''}`} title={favTeams.length ? undefined : 'Maç sayfalarından takım favorilediğinde çalışır'}>
+                <Star size={14} fill={onlyFav ? 'currentColor' : 'none'} /> Favori takımlarım {favTeams.length > 0 && `(${favTeams.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-5 mb-3 flex flex-wrap items-baseline justify-between gap-2">
@@ -152,8 +185,11 @@ export default function HomePage() {
           </Alert>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
-            {visible.map((f) => (
-              <FixtureCard key={f.id} f={f} />
+            {visible.map((f, i) => (
+              <Fragment key={f.id}>
+                <FixtureCard f={f} />
+                {i % 6 === 5 && i < visible.length - 1 && <AdSlot placement="matches_inline" className="md:col-span-2" />}
+              </Fragment>
             ))}
           </div>
         )}

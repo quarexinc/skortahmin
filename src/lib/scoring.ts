@@ -51,7 +51,7 @@ export async function scorePending(opts: { force?: boolean; limit?: number } = {
         );
         await notify(
           p.user_id,
-          pts === 3 ? '🎯 Tam skor! +3 puan' : pts === 1 ? '✅ Sonucu bildin! +1 puan' : 'Tahminin sonuçlandı',
+          pts === 3 ? 'Tam skor! +3 puan' : pts === 1 ? 'Sonucu bildin! +1 puan' : 'Tahminin sonuçlandı',
           `${p.home_name} ${ah}–${aa} ${p.away_name} · Tahminin: ${p.home_goals}–${p.away_goals}`,
           '/hesap/tahminler',
         );

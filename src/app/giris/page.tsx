@@ -1,3 +1,4 @@
+import { LogoMark } from '@/components/Logo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -13,7 +14,7 @@ export default async function Page() {
   return (
     <main className="mx-auto max-w-md px-4 py-14">
       <div className="mb-8 text-center">
-        <span className="text-4xl">⚽</span>
+        <LogoMark size={48} className="mx-auto" />
         <h1 className="mt-3 text-2xl font-black">Hesabına giriş yap</h1>
       </div>
       <div className="card p-6">

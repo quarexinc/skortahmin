@@ -1,4 +1,5 @@
 'use client';
+import { Check, Plus } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 import { onCouponChange, readCoupon, togglePick, type CouponPick } from '@/lib/client';
@@ -35,11 +36,11 @@ export default function PickButton({ fixture, market, selection, prob }: { fixtu
     <button
       onClick={click}
       title={on ? 'Kupondan çıkar' : 'Kupona ekle'}
-      className={`mt-1.5 rounded-lg px-2 py-0.5 text-[11px] font-semibold transition ${
+      className={`mt-1.5 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-semibold transition ${
         on ? 'bg-accent text-ink-950' : 'border border-white/10 text-slate-400 hover:border-accent/50 hover:text-accent-soft'
       }`}
     >
-      {on ? '✓ Kuponda' : '+ Kupon'}
+      {on ? <><Check size={12} /> Kuponda</> : <><Plus size={12} /> Kupon</>}
     </button>
   );
 }

@@ -5,6 +5,7 @@ import ChatWidget from '@/components/ChatWidget';
 import Footer from '@/components/Footer';
 import MaintenanceGate from '@/components/MaintenanceGate';
 import Navbar from '@/components/Navbar';
+import { BackToTop, CookieBanner, PageTracker } from '@/components/SiteExtras';
 import { getUser } from '@/lib/auth';
 import { dbConfigured } from '@/lib/db';
 import { getAnnouncements, getSettings } from '@/lib/settings';
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   },
   description:
     'API-Football gerçek verileriyle futbol maç analizi ve Poisson tabanlı skor tahmini. Form, H2H, 1X2, KG ve Alt/Üst olasılıkları, tahmin yarışması ve kupon oluşturucu.',
+  applicationName: 'Skor Çıkartıcı',
+  openGraph: { type: 'website', locale: 'tr_TR', siteName: 'Skor Çıkartıcı' },
 };
 
 export const viewport: Viewport = {
@@ -41,6 +44,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </MaintenanceGate>
           <Footer />
           <ChatWidget enabled={enabled && settings.liveChatEnabled} supportHours={settings.supportHours} />
+          <PageTracker />
+          <BackToTop />
+          {settings.cookieBanner && <CookieBanner />}
         </AuthProvider>
       </body>
     </html>

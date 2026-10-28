@@ -1,3 +1,4 @@
+import { AlertTriangle, Info, OctagonX } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface AlertProps {
@@ -13,17 +14,16 @@ const STYLES: Record<string, string> = {
   info: 'border-sky-500/30 bg-sky-500/10 text-sky-100',
 };
 
-const ICONS: Record<string, string> = {
-  warn: '⚠️',
-  error: '⛔',
-  info: 'ℹ️',
-};
+const ICONS = { warn: AlertTriangle, error: OctagonX, info: Info };
 
 export default function Alert({ variant = 'warn', title, children, action }: AlertProps) {
   return (
     <div className={`animate-fade-in rounded-2xl border p-4 text-sm ${STYLES[variant]}`}>
       <div className="flex items-start gap-3">
-        <span aria-hidden>{ICONS[variant]}</span>
+        {(() => {
+          const I = ICONS[variant];
+          return <I size={18} className="mt-0.5 shrink-0" aria-hidden />;
+        })()}
         <div className="min-w-0 flex-1">
           {title && <p className="font-semibold">{title}</p>}
           {children && <div className={title ? 'mt-1 opacity-90' : ''}>{children}</div>}

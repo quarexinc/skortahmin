@@ -1,4 +1,6 @@
 'use client';
+import CannedPicker from './admin/CannedPicker';
+import { ArrowLeft } from 'lucide-react';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -62,7 +64,7 @@ export default function TicketThread({ id, staff = false }: { id: number; staff?
   const who = t.user_name ?? t.guest_name ?? 'Ziyaretçi';
   return (
     <div className="space-y-5">
-      <Link href={staff ? '/admin/destek' : '/destek'} className="text-sm text-slate-400 hover:text-white">← Taleplere dön</Link>
+      <Link href={staff ? '/admin/destek' : '/destek'} className="text-sm text-slate-400 hover:text-white"><ArrowLeft size={14} className="inline" /> Taleplere dön</Link>
       <Card>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -71,7 +73,7 @@ export default function TicketThread({ id, staff = false }: { id: number; staff?
             {staff && (
               <p className="mt-1 text-sm text-slate-400">
                 {who} · {t.user_email ?? t.guest_email}
-                {t.user_plan === 'premium' && ' · 💎 Premium'}
+                {t.user_plan === 'premium' && ' · Premium'}
                 {!t.user_id && ' · üye değil (e-postayla yanıtlayın)'}
               </p>
             )}
@@ -119,6 +121,7 @@ export default function TicketThread({ id, staff = false }: { id: number; staff?
             <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder={staff ? 'Kullanıcıya yanıt yaz…' : 'Mesajını yaz…'} required minLength={2} maxLength={4000} />
             <div className="flex flex-wrap gap-2">
               <Button type="submit" loading={busy}>{staff ? 'Yanıtla' : 'Gönder'}</Button>
+              {staff && <CannedPicker up onPick={(b) => setText((t) => (t ? `${t}\n\n${b}` : b))} />}
               {t.status !== 'closed' && (
                 <Button type="button" variant="ghost" onClick={() => patch({ status: 'closed' })}>Talebi kapat</Button>
               )}

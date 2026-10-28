@@ -1,4 +1,5 @@
 'use client';
+import { CheckCircle2, ChevronLeft, ChevronRight, Gem, StickyNote, X, XCircle } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -67,11 +68,11 @@ function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; o
           <p className="truncate text-sm text-slate-400">{u.email} · #{u.id}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {u.role === 'admin' && <Badge color="violet">Yönetici</Badge>}
-            {premiumActive(u) ? <Badge color="amber">💎 Premium{u.premium_until ? ` · ${fmtDate(u.premium_until)}` : ' · süresiz'}</Badge> : <Badge>Ücretsiz</Badge>}
+            {premiumActive(u) ? <Badge color="amber"><Gem size={11} /> Premium{u.premium_until ? ` · ${fmtDate(u.premium_until)}` : ' · süresiz'}</Badge> : <Badge>Ücretsiz</Badge>}
             {u.banned && <Badge color="red">Askıda</Badge>}
           </div>
         </div>
-        <button onClick={onClose} className="text-slate-500 hover:text-white" aria-label="Kapat">✕</button>
+        <button onClick={onClose} className="text-slate-500 hover:text-white" aria-label="Kapat"><X size={18} /></button>
       </div>
 
       <div className="grid grid-cols-3 gap-2 text-center text-sm sm:grid-cols-5">
@@ -79,7 +80,7 @@ function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; o
           <div key={k} className="rounded-xl bg-ink-900 p-2"><p className="text-[11px] text-slate-500">{k}</p><p className="font-bold">{v as number}</p></div>
         ))}
       </div>
-      <p className="text-xs text-slate-500">Kayıt: {fmtDateTime(u.created_at)} · Son giriş: {u.last_login_at ? timeAgo(u.last_login_at) : '—'}{u.favorite_team ? ` · ❤️ ${u.favorite_team}` : ''}</p>
+      <p className="text-xs text-slate-500">Kayıt: {fmtDateTime(u.created_at)} · Son giriş: {u.last_login_at ? timeAgo(u.last_login_at) : '—'}{u.favorite_team ? ` · Takım: ${u.favorite_team}` : ''}</p>
       {u.banned && u.ban_reason && <Notice kind="error">Askı sebebi: {u.ban_reason}</Notice>}
 
       <div className="space-y-3 border-t border-white/5 pt-4">
@@ -124,17 +125,57 @@ function Detail({ id, onClose, onChanged }: { id: number; onClose: () => void; o
         </div>
       )}
 
+      <UserNotes id={u.id} />
+
       {d.logins.length > 0 && (
         <div className="border-t border-white/5 pt-4">
           <p className="label-muted mb-2">Son giriş denemeleri</p>
           <ul className="space-y-1 text-xs text-slate-400">
             {d.logins.map((l: { ip: string; success: boolean; created_at: string }, i: number) => (
-              <li key={i}>{l.success ? '✅' : '❌'} {fmtDateTime(l.created_at)} · {l.ip}</li>
+              <li key={i} className="flex items-center gap-1.5">{l.success ? <CheckCircle2 size={13} className="text-accent-soft" /> : <XCircle size={13} className="text-red-400" />} {fmtDateTime(l.created_at)} · {l.ip}</li>
             ))}
           </ul>
         </div>
       )}
     </Card>
+  );
+}
+
+function UserNotes({ id }: { id: number }) {
+  const [items, setItems] = useState<{ id: number; body: string; created_at: string; author: string | null }[]>([]);
+  const [text, setText] = useState('');
+  const load = useCallback(() => api<{ items: typeof items }>(`/api/admin/users/${id}/notes`).then((r) => setItems(r.data?.items ?? [])), [id]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    await api(`/api/admin/users/${id}/notes`, { body: { body: text } });
+    setText('');
+    load();
+  };
+  const del = async (nid: number) => {
+    await api(`/api/admin/users/${id}/notes?note=${nid}`, { method: 'DELETE' });
+    load();
+  };
+  return (
+    <div className="space-y-3 border-t border-white/5 pt-4">
+      <p className="label-muted flex items-center gap-1.5"><StickyNote size={13} /> Yönetici notları (kullanıcı görmez)</p>
+      {items.map((n) => (
+        <div key={n.id} className="rounded-xl bg-ink-900 p-3 text-sm">
+          <p className="whitespace-pre-wrap">{n.body}</p>
+          <p className="mt-1 flex justify-between text-[11px] text-slate-500">
+            <span>{n.author ?? '—'} · {timeAgo(n.created_at)}</span>
+            <button onClick={() => del(n.id)} className="hover:text-red-300">Sil</button>
+          </p>
+        </div>
+      ))}
+      <form onSubmit={add} className="flex gap-2">
+        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Not ekle…" maxLength={1000} />
+        <Button size="sm" type="submit">Ekle</Button>
+      </form>
+    </div>
   );
 }
 
@@ -197,9 +238,9 @@ function UsersInner() {
           )}
           {d && d.total > 50 && (
             <div className="flex items-center justify-between border-t border-white/5 px-4 py-3 text-sm">
-              <Button size="sm" variant="ghost" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>← Önceki</Button>
+              <Button size="sm" variant="ghost" disabled={page === 0} onClick={() => setPage((p) => p - 1)}><ChevronLeft size={14} /> Önceki</Button>
               <span className="text-slate-500">Sayfa {page + 1} / {Math.ceil(d.total / 50)}</span>
-              <Button size="sm" variant="ghost" disabled={(page + 1) * 50 >= d.total} onClick={() => setPage((p) => p + 1)}>Sonraki →</Button>
+              <Button size="sm" variant="ghost" disabled={(page + 1) * 50 >= d.total} onClick={() => setPage((p) => p + 1)}>Sonraki <ChevronRight size={14} /></Button>
             </div>
           )}
         </div>

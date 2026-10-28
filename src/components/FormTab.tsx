@@ -1,3 +1,4 @@
+import { BarChart3, TrendingUp } from 'lucide-react';
 import { seasonLabel } from '@/config';
 import { fmtDateShort, num0, num1 } from '@/lib/format';
 import type { AnalysisResponse, Hat, TeamAnalysis } from '@/lib/types';
@@ -18,7 +19,7 @@ function StatBox({ label, value, accent }: { label: string; value: string; accen
 function SeasonStats({ side, data }: { side: 'home' | 'away'; data: AnalysisResponse }) {
   const t = data[side];
   const s = t.stats;
-  if (!s) return <EmptyState icon="📊" title="Veri şu anda mevcut değil">Sezon istatistikleri alınamadı.</EmptyState>;
+  if (!s) return <EmptyState icon={BarChart3} title="Veri şu anda mevcut değil">Sezon istatistikleri alınamadı.</EmptyState>;
   const h = (x: Hat<number | null>) => num1(x.total);
   return (
     <div>
@@ -140,7 +141,7 @@ function TeamFormSection({ side, data }: { side: 'home' | 'away'; data: Analysis
           </div>
         </>
       ) : (
-        <EmptyState icon="📈" title="Veri şu anda mevcut değil">
+        <EmptyState icon={TrendingUp} title="Veri şu anda mevcut değil">
           Bu takımın son maçı verisi alınamadı.
         </EmptyState>
       )}

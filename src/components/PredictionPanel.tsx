@@ -1,4 +1,5 @@
 'use client';
+import { ChevronDown } from 'lucide-react';
 
 import { useState } from 'react';
 import { seasonLabel } from '@/config';
@@ -163,7 +164,7 @@ export default function PredictionPanel({ data }: { data: AnalysisResponse }) {
           aria-expanded={open}
         >
           <span className="font-semibold text-slate-200">Bu tahmin nasıl hesaplandı?</span>
-          <span className={`text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+          <ChevronDown size={18} className={`text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
         {open && <HowCalculated data={data} />}
       </div>

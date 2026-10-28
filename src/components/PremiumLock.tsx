@@ -1,3 +1,4 @@
+import { Gem } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PremiumLock({ loggedIn }: { loggedIn: boolean }) {
@@ -14,7 +15,7 @@ export default function PremiumLock({ loggedIn }: { loggedIn: boolean }) {
         </div>
       </div>
       <div className="relative text-center">
-        <span className="text-3xl">💎</span>
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-400/15 text-amber-300"><Gem size={24} /></span>
         <p className="mt-2 text-lg font-bold">Ayrıntılı analiz Premium üyelere özel</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
           En olası 5 skor, KG Var/Yok, Alt/Üst 1.5 · 2.5 · 3.5, modelin tüm hesap adımları ve API tahmini karşılaştırması.

@@ -1,4 +1,5 @@
 // Ortak arayüz parçaları (koyu tema, yeşil vurgu).
+import { Inbox, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
@@ -116,11 +117,12 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   );
 }
 
-export function Empty({ icon = '📭', title, children }: { icon?: string; title: string; children?: ReactNode }) {
+export function Empty({ icon, title, children }: { icon?: LucideIcon; title: string; children?: ReactNode }) {
+  const Ico = icon ?? Inbox;
   return (
     <div className="card flex flex-col items-center px-6 py-12 text-center">
-      <span className="text-4xl" aria-hidden>
-        {icon}
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/5 text-slate-400" aria-hidden>
+        <Ico size={26} strokeWidth={1.75} />
       </span>
       <p className="mt-3 font-semibold text-slate-200">{title}</p>
       {children && <div className="mt-1 max-w-md text-sm text-slate-400">{children}</div>}
