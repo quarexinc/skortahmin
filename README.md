@@ -12,8 +12,7 @@ npm run dev
 # → http://localhost:3000
 ```
 
-API anahtarı `.env.local` içindedir (`API_FOOTBALL_KEY`). İsteğe bağlı olarak kendi anahtarınızı
-oraya yazabilirsiniz.
+Ortam değişkenlerini `.env.example` dosyasını `.env.local` olarak kopyalayıp doldurun.
 
 ## Teknoloji
 
@@ -87,6 +86,21 @@ API'nin kendi `/predictions` çıktısı var ise yan yana karşılaştırma tabl
   H2H ve maç verisi her zaman günceldir.
 - `/trophies` takım parametresi kabul etmediği için kupa vitrini, takımdan öncelikli oyuncunun
   `?player=` vitrininden gösterilir; veri yoksa ilgili boş durum mesajı görünür.
+
+
+## Üyelik, destek ve yönetim (v2)
+
+Postgres (Neon) bağlandığında aşağıdakiler etkinleşir; veritabanı yoksa site yalnızca maç analizi olarak çalışır.
+
+- **Üyelik:** kayıt / giriş (bcrypt + imzalı JWT çerez), profil, şifre değiştirme, tüm cihazlardan çıkış, hesap silme, hatalı giriş kilidi
+- **Premium:** ücretsiz/premium plan; ayrıntılı olasılıklar sunucu tarafında kilitlenir; premium talebi → admin onayı
+- **Destek:** destek talepleri (kategori, öncelik, durum), ziyaretçi iletişim formu, canlı destek sohbeti, bildirimler
+- **Topluluk:** skor tahmin yarışması (tam skor 3, sonuç 1 puan, otomatik puanlama), liderlik tablosu, kupon oluşturucu, favoriler, maç yorumları ve şikâyet
+- **Yönetim paneli (`/admin`):** gösterge paneli, kullanıcı yönetimi (premium, rol, askı, şifre sıfırlama), premium talepleri, destek, canlı destek gelen kutusu, yorum moderasyonu, tahmin puanlama, duyurular, toplu bildirim, site ayarları (bakım modu vb.), işlem kayıtları
+- **İçerik:** açılış sayfası, SSS, hakkımızda, iletişim, hesaplama yöntemi, kullanım koşulları, gizlilik, KVKK, sorumlu oyun
+
+Gerekli ortam değişkenleri için `.env.example` dosyasına bakın. Tablolar ilk istekte otomatik oluşturulur ve
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` ile ilk yönetici hesabı açılır.
 
 ## Uyarı
 

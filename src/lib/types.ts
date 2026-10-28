@@ -354,6 +354,8 @@ export interface AnalysisResponse {
   dailyCount: number;
   /** true ise kadro/künye/krallık/kupa verileri /extras uç noktasından ayrıca yüklenecek */
   extrasPending?: boolean;
+  /** true ise ayrıntılı olasılıklar premium kilidiyle gizlendi */
+  locked?: boolean;
 }
 
 export interface TeamExtras {

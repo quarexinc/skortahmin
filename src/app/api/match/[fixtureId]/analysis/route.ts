@@ -4,6 +4,8 @@
 // Model hesabı YALNIZCA burada (sunucu tarafı) yapılır.
 import { NextResponse } from 'next/server';
 import { apiFootball, ApiFootballError, getDailyCount } from '@/lib/apiFootball';
+import { getUser } from '@/lib/auth';
+import { dbConfigured } from '@/lib/db';
 import { TTL } from '@/lib/cache';
 import { getFixture, matchContext } from '@/lib/matchData';
 import { computePrediction } from '@/lib/prediction';
@@ -178,6 +180,21 @@ export async function GET(_req: Request, ctx: { params: { fixtureId: string } })
     warnings,
     dailyCount: getDailyCount(),
   };
+
+  // Premium kilidi: ücretsiz üye/ziyaretçiye ayrıntılı olasılıklar gönderilmez (sunucu tarafında kesilir).
+  const viewer = await getUser();
+  if (dbConfigured() && !viewer?.isPremium) {
+    body.locked = true;
+    body.apiPrediction = null;
+    body.model = {
+      ...body.model,
+      topScores: [],
+      btts: null,
+      totals: null,
+      weights: null,
+      partLambdas: { season: null, form: null, h2h: null },
+    };
+  }
 
   return NextResponse.json(body);
 }

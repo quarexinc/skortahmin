@@ -10,7 +10,10 @@ import { useEffect, useState } from 'react';
 import Alert from '@/components/Alert';
 import FormTab from '@/components/FormTab';
 import H2HSection from '@/components/H2HSection';
+import CommentsSection from '@/components/CommentsSection';
+import MatchActions from '@/components/MatchActions';
 import MatchHeader from '@/components/MatchHeader';
+import UserPredictionBox from '@/components/UserPredictionBox';
 import PlayersSection from '@/components/PlayersSection';
 import PredictionPanel from '@/components/PredictionPanel';
 import Skeleton from '@/components/Skeleton';
@@ -18,13 +21,14 @@ import Tabs from '@/components/Tabs';
 import { trApiError } from '@/lib/format';
 import type { AnalysisResponse, ExtrasResponse } from '@/lib/types';
 
-type TabId = 'genel' | 'form' | 'h2h' | 'oyuncular';
+type TabId = 'genel' | 'form' | 'h2h' | 'oyuncular' | 'yorumlar';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'genel', label: 'Genel Özet & Tahmin' },
   { id: 'form', label: 'Form & Kariyer' },
   { id: 'h2h', label: 'Karşılıklı Maçlar' },
   { id: 'oyuncular', label: 'Oyuncular' },
+  { id: 'yorumlar', label: 'Yorumlar' },
 ];
 
 function MatchSkeleton() {
@@ -117,7 +121,7 @@ export default function MacPage() {
         <Alert variant="error" title="Analiz alınamadı">
           {error}
         </Alert>
-        <Link href="/" className="mt-4 inline-block text-sm text-accent-soft hover:underline">
+        <Link href="/maclar" className="mt-4 inline-block text-sm text-accent-soft hover:underline">
           ← Maç listesine dön
         </Link>
       </main>
@@ -141,11 +145,19 @@ export default function MacPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
-      <Link href="/" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white">
+      <Link href="/maclar" className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white">
         ← Maç listesi
       </Link>
 
       <MatchHeader data={data} />
+
+      <div className="mt-4">
+        <MatchActions data={data} />
+      </div>
+
+      <div className="mt-4">
+        <UserPredictionBox fixture={data.fixture} />
+      </div>
 
       {data.warnings.length > 0 && (
         <div className="mt-4 space-y-2">
@@ -166,13 +178,9 @@ export default function MacPage() {
         {tab === 'form' && <FormTab data={data} />}
         {tab === 'h2h' && <H2HSection data={data} />}
         {tab === 'oyuncular' && <PlayersSection data={data} />}
+        {tab === 'yorumlar' && <CommentsSection fixtureId={data.fixture.id} />}
       </div>
 
-      <footer className="mt-10 border-t border-white/5 pt-5 text-center text-[11px] leading-relaxed text-slate-600">
-        Veri kaynağı: API-Football v3 · Tüm sayılar çalışma anında API&apos;dendir
-        <br />
-        Tahminler gerçek istatistiklerden hesaplanan matematiksel olasılıklardır; garanti sonuç değildir.
-      </footer>
     </main>
   );
 }

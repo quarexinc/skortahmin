@@ -5,6 +5,9 @@ import { seasonLabel } from '@/config';
 import { num0, num1, pct1 } from '@/lib/format';
 import type { AnalysisResponse, ModelResult } from '@/lib/types';
 import Alert from './Alert';
+import { useAuth } from './AuthProvider';
+import PickButton from './PickButton';
+import PremiumLock from './PremiumLock';
 import ProgressBar from './ProgressBar';
 
 const w = (x: number) => `${(x * 100).toFixed(2)}%`;
@@ -12,6 +15,8 @@ const w = (x: number) => `${(x * 100).toFixed(2)}%`;
 export default function PredictionPanel({ data }: { data: AnalysisResponse }) {
   const m = data.model;
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const f = data.fixture;
 
   if (!m.ok) {
     return (
@@ -59,40 +64,48 @@ export default function PredictionPanel({ data }: { data: AnalysisResponse }) {
             <div>
               <p className="text-[11px] text-slate-500">1 · Ev Sahibi</p>
               <p className="text-sm font-bold tabular-nums text-accent-soft">{pct1(m.oneXTwo!.home)}</p>
+              <PickButton fixture={f} market="1X2" selection="1" prob={m.oneXTwo!.home} />
             </div>
             <div>
               <p className="text-[11px] text-slate-500">X · Beraberlik</p>
               <p className="text-sm font-bold tabular-nums text-slate-300">{pct1(m.oneXTwo!.draw)}</p>
+              <PickButton fixture={f} market="1X2" selection="X" prob={m.oneXTwo!.draw} />
             </div>
             <div>
               <p className="text-[11px] text-slate-500">2 · Deplasman</p>
               <p className="text-sm font-bold tabular-nums text-sky-400">{pct1(m.oneXTwo!.away)}</p>
+              <PickButton fixture={f} market="1X2" selection="2" prob={m.oneXTwo!.away} />
             </div>
           </div>
         </div>
 
-        {/* KG */}
-        <div className="card animate-fade-in p-5">
-          <p className="label-muted mb-3">Karşılıklı Gol (KG)</p>
-          <div className="space-y-4">
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="text-slate-300">KG Var</span>
-                <span className="font-bold tabular-nums text-accent-soft">{pct1(m.btts!.yes)}</span>
+        {data.locked ? (
+          <PremiumLock loggedIn={!!user} />
+        ) : (
+          <div className="card animate-fade-in p-5">
+            <p className="label-muted mb-3">Karşılıklı Gol (KG)</p>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-slate-300">KG Var <PickButton fixture={f} market="KG" selection="KG Var" prob={m.btts!.yes} /></span>
+                  <span className="font-bold tabular-nums text-accent-soft">{pct1(m.btts!.yes)}</span>
+                </div>
+                <ProgressBar percent={m.btts!.yes * 100} barClassName="bg-accent" />
               </div>
-              <ProgressBar percent={m.btts!.yes * 100} barClassName="bg-accent" />
-            </div>
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="text-slate-300">KG Yok</span>
-                <span className="font-bold tabular-nums text-slate-300">{pct1(m.btts!.no)}</span>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-slate-300">KG Yok <PickButton fixture={f} market="KG" selection="KG Yok" prob={m.btts!.no} /></span>
+                  <span className="font-bold tabular-nums text-slate-300">{pct1(m.btts!.no)}</span>
+                </div>
+                <ProgressBar percent={m.btts!.no * 100} barClassName="bg-slate-500" />
               </div>
-              <ProgressBar percent={m.btts!.no * 100} barClassName="bg-slate-500" />
             </div>
           </div>
-        </div>
+        )}
       </div>
 
+      {!data.locked && (
+        <>
       {/* Toplam gol */}
       <div className="card animate-fade-in p-5">
         <p className="label-muted mb-3">Toplam Gol</p>
@@ -104,7 +117,11 @@ export default function PredictionPanel({ data }: { data: AnalysisResponse }) {
           ].map((r) => (
             <div key={r.label}>
               <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-200">{r.label} Gol</span>
+                <span className="flex items-center gap-2 font-semibold text-slate-200">
+                  {r.label} Gol
+                  <PickButton fixture={f} market={`Alt/Üst ${r.label}`} selection={`${r.label} Alt`} prob={r.u} />
+                  <PickButton fixture={f} market={`Alt/Üst ${r.label}`} selection={`${r.label} Üst`} prob={r.o} />
+                </span>
                 <span className="text-xs tabular-nums text-slate-400">
                   Alt <b className="text-sky-400">{pct1(r.u)}</b> · Üst <b className="text-accent-soft">{pct1(r.o)}</b>
                 </span>
@@ -194,6 +211,9 @@ export default function PredictionPanel({ data }: { data: AnalysisResponse }) {
         <div className="card animate-fade-in p-5 text-sm text-slate-400">
           API tahmini bu planda mevcut değil.
         </div>
+      )}
+
+        </>
       )}
 
       <p className="px-1 text-[11px] leading-relaxed text-slate-500">

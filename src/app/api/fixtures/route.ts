@@ -1,11 +1,8 @@
 // GET /api/fixtures?date=YYYY-MM-DD
 // Bir güne ait maçlar — yalnızca config'deki ligler, cache'li.
 import { NextResponse } from 'next/server';
-import { ACTIVE_LEAGUE_IDS } from '@/config/leagues';
-import { apiFootball, ApiFootballError, getDailyCount } from '@/lib/apiFootball';
-import { cachedFetch, TTL } from '@/lib/cache';
-import { lightFixture } from '@/lib/parsers';
-import type { FixtureRaw, LightFixture } from '@/lib/types';
+import { ApiFootballError, getDailyCount } from '@/lib/apiFootball';
+import { getDayFixtures } from '@/lib/fixtures';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,17 +16,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    // Filtrelenmiş hafif liste saklanır (tam günlük yanıt çok büyük olabilir).
-    const { value: fixtures, hit } = await cachedFetch<LightFixture[]>(
-      `fixtures-light:${date}`,
-      TTL.fixtures,
-      async () => {
-        const all = await apiFootball<FixtureRaw[]>('fixtures', { date }, { timezone: true });
-        return (Array.isArray(all) ? all : [])
-          .filter((f) => f.league && ACTIVE_LEAGUE_IDS.has(f.league.id))
-          .map(lightFixture);
-      },
-    );
+    const { fixtures, hit } = await getDayFixtures(date);
     return NextResponse.json({
       date,
       count: fixtures.length,

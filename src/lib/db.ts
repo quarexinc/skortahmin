@@ -1,0 +1,268 @@
+// ---------------------------------------------------------------------------
+// Postgres bağlantısı (Neon / herhangi bir Postgres). Şema ilk kullanımda
+// otomatik oluşturulur (CREATE TABLE IF NOT EXISTS) ve admin hesabı
+// ADMIN_EMAIL / ADMIN_PASSWORD ortam değişkenlerinden tohumlanır.
+// ---------------------------------------------------------------------------
+import 'server-only';
+import { Pool, type PoolClient } from 'pg';
+import bcrypt from 'bcryptjs';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __skorPool: Pool | undefined;
+  // eslint-disable-next-line no-var
+  var __skorSchema: Promise<void> | undefined;
+}
+
+export function dbConfigured(): boolean {
+  return !!(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+}
+
+function pool(): Pool {
+  if (!globalThis.__skorPool) {
+    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    if (!connectionString) throw new Error('DATABASE_URL tanımlı değil; veritabanı bağlı değil.');
+    const local = /localhost|127\.0\.0\.1/.test(connectionString);
+    globalThis.__skorPool = new Pool({
+      connectionString,
+      max: Number(process.env.DB_POOL_MAX ?? (local ? 1 : 5)),
+      ssl: local ? undefined : { rejectUnauthorized: false },
+      idleTimeoutMillis: 10_000,
+    });
+  }
+  return globalThis.__skorPool;
+}
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
+  plan TEXT NOT NULL DEFAULT 'free',
+  premium_until TIMESTAMPTZ,
+  favorite_team TEXT,
+  bio TEXT,
+  avatar_color TEXT NOT NULL DEFAULT '#22c55e',
+  banned BOOLEAN NOT NULL DEFAULT FALSE,
+  ban_reason TEXT,
+  token_version INT NOT NULL DEFAULT 0,
+  email_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_login_at TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL,
+  ip TEXT,
+  success BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS login_attempts_email_idx ON login_attempts (email, created_at);
+CREATE TABLE IF NOT EXISTS favorites (
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  ref_id INT NOT NULL,
+  label TEXT NOT NULL,
+  logo TEXT,
+  extra JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, kind, ref_id)
+);
+CREATE TABLE IF NOT EXISTS predictions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  fixture_id INT NOT NULL,
+  home_goals INT NOT NULL,
+  away_goals INT NOT NULL,
+  fixture_date TIMESTAMPTZ NOT NULL,
+  home_name TEXT NOT NULL,
+  away_name TEXT NOT NULL,
+  league_name TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  actual_home INT,
+  actual_away INT,
+  points INT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, fixture_id)
+);
+CREATE INDEX IF NOT EXISTS predictions_pending_idx ON predictions (status, fixture_date);
+CREATE TABLE IF NOT EXISTS coupons (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  picks JSONB NOT NULL,
+  total_prob DOUBLE PRECISION NOT NULL,
+  is_public BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS comments (
+  id SERIAL PRIMARY KEY,
+  fixture_id INT NOT NULL,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  hidden BOOLEAN NOT NULL DEFAULT FALSE,
+  reports INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS comments_fixture_idx ON comments (fixture_id, created_at);
+CREATE TABLE IF NOT EXISTS comment_reports (
+  comment_id INT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (comment_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS tickets (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE SET NULL,
+  guest_name TEXT,
+  guest_email TEXT,
+  subject TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'genel',
+  priority TEXT NOT NULL DEFAULT 'normal',
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS ticket_messages (
+  id SERIAL PRIMARY KEY,
+  ticket_id INT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  author_id INT REFERENCES users(id) ON DELETE SET NULL,
+  is_staff BOOLEAN NOT NULL DEFAULT FALSE,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS chats (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'open',
+  user_unread INT NOT NULL DEFAULT 0,
+  admin_unread INT NOT NULL DEFAULT 0,
+  last_message_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  chat_id INT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  sender TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS chat_messages_chat_idx ON chat_messages (chat_id, id);
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  body TEXT,
+  link TEXT,
+  read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, read, created_at);
+CREATE TABLE IF NOT EXISTS announcements (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  body TEXT,
+  level TEXT NOT NULL DEFAULT 'info',
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS premium_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  months INT NOT NULL DEFAULT 1,
+  note TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  admin_note TEXT,
+  decided_by INT REFERENCES users(id) ON DELETE SET NULL,
+  decided_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  actor_id INT REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  target TEXT,
+  meta JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+`;
+
+async function ensureSchema(): Promise<void> {
+  if (!globalThis.__skorSchema) {
+    globalThis.__skorSchema = (async () => {
+      const c = await pool().connect();
+      try {
+        await c.query(SCHEMA);
+        await seedAdmin(c);
+      } finally {
+        c.release();
+      }
+    })().catch((e) => {
+      globalThis.__skorSchema = undefined;
+      throw e;
+    });
+  }
+  return globalThis.__skorSchema;
+}
+
+async function seedAdmin(c: PoolClient): Promise<void> {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) return;
+  const existing = await c.query('SELECT id, role FROM users WHERE email = $1', [email]);
+  if (existing.rows.length === 0) {
+    const hash = await bcrypt.hash(password, 10);
+    await c.query(
+      `INSERT INTO users (email, name, password_hash, role, plan) VALUES ($1, 'Yönetici', $2, 'admin', 'premium')`,
+      [email, hash],
+    );
+  } else if (existing.rows[0].role !== 'admin') {
+    await c.query(`UPDATE users SET role = 'admin' WHERE id = $1`, [existing.rows[0].id]);
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function q<T = any>(text: string, params: unknown[] = []): Promise<T[]> {
+  await ensureSchema();
+  const res = await pool().query(text, params as unknown[]);
+  return res.rows as T[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function q1<T = any>(text: string, params: unknown[] = []): Promise<T | null> {
+  const rows = await q<T>(text, params);
+  return rows[0] ?? null;
+}
+
+export async function audit(actorId: number | null, action: string, target?: string, meta?: unknown) {
+  try {
+    await q('INSERT INTO audit_logs (actor_id, action, target, meta) VALUES ($1, $2, $3, $4)', [
+      actorId,
+      action,
+      target ?? null,
+      meta ? JSON.stringify(meta) : null,
+    ]);
+  } catch (e) {
+    console.error('[audit] yazılamadı', e);
+  }
+}
+
+export async function notify(userId: number, title: string, body?: string, link?: string) {
+  try {
+    await q('INSERT INTO notifications (user_id, title, body, link) VALUES ($1, $2, $3, $4)', [
+      userId,
+      title,
+      body ?? null,
+      link ?? null,
+    ]);
+  } catch (e) {
+    console.error('[notify] yazılamadı', e);
+  }
+}
