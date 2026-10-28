@@ -23,6 +23,13 @@ export interface SessionUser {
   bio: string | null;
   avatarColor: string;
   createdAt: string;
+  /** kuruş (1/100 kredi) */
+  balance: number;
+  vault: number;
+  wagered: number;
+  birthDate: string | null;
+  ageVerified: boolean;
+  selfExcludedUntil: string | null;
 }
 
 function secret(): Uint8Array {
@@ -64,6 +71,22 @@ interface UserRow {
   banned: boolean;
   token_version: number;
   created_at: Date;
+  balance?: string | number;
+  vault?: string | number;
+  wagered?: string | number;
+  birth_date?: Date | string | null;
+  self_excluded_until?: Date | null;
+}
+
+export function ageFrom(birth: Date | string | null | undefined): number | null {
+  if (!birth) return null;
+  const b = new Date(birth);
+  if (Number.isNaN(b.getTime())) return null;
+  const now = new Date();
+  let a = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) a--;
+  return a;
 }
 
 export function toSessionUser(r: UserRow): SessionUser {
@@ -83,6 +106,13 @@ export function toSessionUser(r: UserRow): SessionUser {
     bio: r.bio,
     avatarColor: r.avatar_color,
     createdAt: new Date(r.created_at).toISOString(),
+    balance: Number(r.balance ?? 0),
+    vault: Number(r.vault ?? 0),
+    wagered: Number(r.wagered ?? 0),
+    birthDate: r.birth_date ? new Date(r.birth_date).toISOString().slice(0, 10) : null,
+    ageVerified: (ageFrom(r.birth_date) ?? 0) >= 18,
+    selfExcludedUntil:
+      r.self_excluded_until && new Date(r.self_excluded_until).getTime() > Date.now() ? new Date(r.self_excluded_until).toISOString() : null,
   };
 }
 

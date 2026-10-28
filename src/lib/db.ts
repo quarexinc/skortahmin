@@ -291,6 +291,94 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   meta JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ===== BloxyBet: cüzdan, oyunlar, sorumlu oyun =====
+ALTER TABLE users ADD COLUMN IF NOT EXISTS balance BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS vault BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS wagered BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS rakeback BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS level_claimed INT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_faucet_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS self_excluded_until TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_wager_limit BIGINT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS session_reminder_min INT;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS credits BIGINT NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS transactions (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  amount BIGINT NOT NULL,
+  balance_after BIGINT NOT NULL,
+  ref TEXT,
+  note TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS transactions_user_idx ON transactions (user_id, id DESC);
+CREATE TABLE IF NOT EXISTS bets (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  game TEXT NOT NULL,
+  amount BIGINT NOT NULL,
+  payout BIGINT NOT NULL DEFAULT 0,
+  multiplier NUMERIC(14,4) NOT NULL DEFAULT 0,
+  detail JSONB,
+  server_hash TEXT,
+  client_seed TEXT,
+  nonce INT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS bets_user_idx ON bets (user_id, id DESC);
+CREATE INDEX IF NOT EXISTS bets_created_idx ON bets (created_at DESC);
+CREATE TABLE IF NOT EXISTS fair_seeds (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  server_seed TEXT NOT NULL,
+  server_hash TEXT NOT NULL,
+  client_seed TEXT NOT NULL,
+  nonce INT NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  revealed_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS fair_seeds_active_idx ON fair_seeds (user_id) WHERE active;
+CREATE TABLE IF NOT EXISTS game_sessions (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  game TEXT NOT NULL,
+  amount BIGINT NOT NULL,
+  state JSONB NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  server_hash TEXT,
+  client_seed TEXT,
+  nonce INT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ended_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS game_sessions_active_idx ON game_sessions (user_id, game) WHERE status = 'active';
+CREATE TABLE IF NOT EXISTS crash_rounds (
+  id BIGSERIAL PRIMARY KEY,
+  crash_point NUMERIC(10,2) NOT NULL,
+  seed TEXT NOT NULL,
+  hash TEXT NOT NULL,
+  starts_at TIMESTAMPTZ NOT NULL,
+  crashed_at TIMESTAMPTZ,
+  settled BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS crash_bets (
+  id BIGSERIAL PRIMARY KEY,
+  round_id BIGINT NOT NULL REFERENCES crash_rounds(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount BIGINT NOT NULL,
+  auto_cashout NUMERIC(10,2),
+  cashout_mult NUMERIC(10,2),
+  payout BIGINT NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (round_id, user_id)
+);
 `;
 
 async function ensureSchema(): Promise<void> {
@@ -319,13 +407,42 @@ async function seedAdmin(c: PoolClient): Promise<void> {
   if (existing.rows.length === 0) {
     const hash = await bcrypt.hash(password, 10);
     await c.query(
-      `INSERT INTO users (email, name, password_hash, role, plan) VALUES ($1, 'Yönetici', $2, 'admin', 'premium')`,
+      `INSERT INTO users (email, name, password_hash, role, plan, balance) VALUES ($1, 'Yönetici', $2, 'admin', 'premium', 100000)`,
       [email, hash],
     );
   } else if (existing.rows[0].role !== 'admin') {
     await c.query(`UPDATE users SET role = 'admin' WHERE id = $1`, [existing.rows[0].id]);
   }
 }
+
+/** Tek bağlantı üzerinde atomik işlem (BEGIN/COMMIT/ROLLBACK). İçeride yalnızca verilen istemciyi kullanın. */
+export async function tx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+  await ensureSchema();
+  const c = await pool().connect();
+  try {
+    await c.query('BEGIN');
+    const out = await fn(c);
+    await c.query('COMMIT');
+    return out;
+  } catch (e) {
+    await c.query('ROLLBACK').catch(() => undefined);
+    throw e;
+  } finally {
+    c.release();
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function cq<T = any>(c: PoolClient, text: string, params: unknown[] = []): Promise<T[]> {
+  return (await c.query(text, params as unknown[])).rows as T[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function cq1<T = any>(c: PoolClient, text: string, params: unknown[] = []): Promise<T | null> {
+  return ((await c.query(text, params as unknown[])).rows[0] as T) ?? null;
+}
+
+export type { PoolClient };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function q<T = any>(text: string, params: unknown[] = []): Promise<T[]> {

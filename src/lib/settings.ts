@@ -6,40 +6,55 @@ export interface SiteSettings {
   maintenance: boolean;
   maintenanceMessage: string;
   registrationsOpen: boolean;
-  commentsEnabled: boolean;
   liveChatEnabled: boolean;
   supportHours: string;
-  premiumPriceText: string;
-  premiumPaymentInfo: string;
-  freeCouponLimit: number;
   adsEnabled: boolean;
-  hideAdsForPremium: boolean;
   cookieBanner: boolean;
   newsletterEnabled: boolean;
   blogEnabled: boolean;
   heroTitle: string;
   heroSubtitle: string;
+  // oyunlar
+  minesEnabled: boolean;
+  crashEnabled: boolean;
+  slotsEnabled: boolean;
+  blackjackEnabled: boolean;
+  minBet: number;
+  maxBet: number;
+  maxPayout: number;
+  // ekonomi (kredi)
+  signupBonus: number;
+  faucetAmount: number;
+  faucetMinutes: number;
+  dailyBonusEnabled: boolean;
+  rakebackEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   maintenance: false,
   maintenanceMessage: 'Sitede kısa bir bakım çalışması yapıyoruz. Lütfen birazdan tekrar deneyin.',
   registrationsOpen: true,
-  commentsEnabled: true,
   liveChatEnabled: true,
   supportHours: 'Her gün 10:00 – 23:00 (TSİ)',
-  premiumPriceText: 'Aylık 99 TL',
-  premiumPaymentInfo:
-    'Premium talebinizi gönderdikten sonra ödeme bilgileri destek ekibimiz tarafından size iletilir. Ödeme onaylanınca üyeliğiniz yönetici tarafından aktifleştirilir.',
-  freeCouponLimit: 3,
   adsEnabled: true,
-  hideAdsForPremium: true,
   cookieBanner: true,
   newsletterEnabled: true,
   blogEnabled: true,
-  heroTitle: 'Futbolu sayılarla oku.',
+  heroTitle: 'Şansını sanal kredilerle dene.',
   heroSubtitle:
-    'Gerçek maç verileri ve şeffaf bir Poisson modeliyle her maç için skor olasılıkları. Analizi incele, tahminini yap, liderlik tablosunda yarış.',
+    'Mines, Crash, Slots ve Blackjack — doğrulanabilir adil sonuçlar, günlük bonuslar, VIP seviyeleri. Gerçek para yok, yalnızca eğlence.',
+  minesEnabled: true,
+  crashEnabled: true,
+  slotsEnabled: true,
+  blackjackEnabled: true,
+  minBet: 0.1,
+  maxBet: 10000,
+  maxPayout: 1000000,
+  signupBonus: 1000,
+  faucetAmount: 50,
+  faucetMinutes: 15,
+  dailyBonusEnabled: true,
+  rakebackEnabled: true,
 };
 
 export interface Announcement {
@@ -65,7 +80,7 @@ async function load() {
   try {
     const rows = await q<{ key: string; value: unknown }>('SELECT key, value FROM settings');
     const s = { ...DEFAULT_SETTINGS } as Record<string, unknown>;
-    for (const r of rows) if (r.key in s) s[r.key] = r.value;
+    for (const r of rows) if (r.key in s && typeof r.value === typeof s[r.key]) s[r.key] = r.value;
     const announcements = await q<Announcement>(
       `SELECT id, title, body, level FROM announcements WHERE active ORDER BY created_at DESC LIMIT 3`,
     );
